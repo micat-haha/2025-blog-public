@@ -43,24 +43,24 @@
 	"currentBackgroundImageId": "",
 	"socialButtons": [
 		{
+			"id": "email",
+			"type": "email",
+			"value": "micat.haha@gmail.com",
+			"label": "",
+			"order": 1
+		},
+		{
 			"id": "github",
 			"type": "github",
 			"value": "https://github.com/micat-haha",
 			"label": "Github",
-			"order": 1
+			"order": 2
 		},
 		{
 			"id": "button-1777288843067",
 			"type": "bilibili",
 			"value": "https://space.bilibili.com/1660364873",
 			"label": "BiliBili",
-			"order": 2
-		},
-		{
-			"id": "email",
-			"type": "email",
-			"value": "micat.haha@gmail.com",
-			"label": "",
 			"order": 3
 		}
 	],
