@@ -60,14 +60,14 @@
 			"id": "button-1777288843067",
 			"type": "bilibili",
 			"value": "https://space.bilibili.com/1660364873",
-			"label": "BiliBili",
+			"label": "     BiliBili     ",
 			"order": 3
 		}
 	],
 	"clockShowSeconds": false,
-	"summaryInContent": false,
+	"summaryInContent": true,
 	"isCachePem": false,
-	"hideEditButton": false,
+	"hideEditButton": true,
 	"enableCategories": true,
 	"currentHatIndex": 3,
 	"hatFlipped": false,
