@@ -33,7 +33,7 @@
 			"url": "/images/art/1c7b726fe720679b.jpg"
 		}
 	],
-	"currentArtImageId": "1c7b726fe720679b",
+	"currentArtImageId": "a46372ff45bc5524",
 	"backgroundImages": [
 		{
 			"id": "",
@@ -47,14 +47,21 @@
 			"type": "github",
 			"value": "https://github.com/micat-haha",
 			"label": "Github",
-			"order": 3
+			"order": 1
+		},
+		{
+			"id": "button-1777288843067",
+			"type": "bilibili",
+			"value": "https://space.bilibili.com/1660364873",
+			"label": "BiliBili",
+			"order": 2
 		},
 		{
 			"id": "email",
 			"type": "email",
 			"value": "micat.haha@gmail.com",
 			"label": "",
-			"order": 1
+			"order": 3
 		}
 	],
 	"clockShowSeconds": false,
