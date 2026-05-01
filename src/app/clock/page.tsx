@@ -1,381 +1,699 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { motion } from 'motion/react'
-import { Play, Pause, RotateCcw } from 'lucide-react'
+import {
+	ArrowRightLeft,
+	CalendarDays,
+	Calculator,
+	Check,
+	Clock3,
+	Copy,
+	Globe2,
+	Pause,
+	Play,
+	RotateCcw,
+	TimerReset
+} from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-type TimerMode = 'stopwatch' | 'timer'
+type ToolTab = 'now' | 'timestamp' | 'diff' | 'offset' | 'timezone' | 'timer'
+type TimestampUnit = 'auto' | 'seconds' | 'milliseconds'
+type DurationFields = {
+	years: string
+	months: string
+	days: string
+	hours: string
+	minutes: string
+	seconds: string
+}
+type TimerMode = 'stopwatch' | 'countdown'
 
-export default function ClockPage() {
-	const [mode, setMode] = useState<TimerMode>('stopwatch')
-	const [stopwatchTime, setStopwatchTime] = useState(0)
-	const [timerTime, setTimerTime] = useState(0)
-	const [timerInput, setTimerInput] = useState({ hours: 0, minutes: 0, seconds: 0 })
-	const [isRunning, setIsRunning] = useState(false)
-	const [laps, setLaps] = useState<number[]>([])
-	const intervalRef = useRef<number | null>(null)
-	const startTimeRef = useRef<number | null>(null)
-	const pausedTimeRef = useRef<number>(0)
-	const initialTimerTimeRef = useRef<number>(0)
-	const stopwatchTimeRef = useRef<number>(0)
-	const timerTimeRef = useRef<number>(0)
+const DEFAULT_TIME_ZONE = 'Asia/Shanghai'
+const COMMON_TIME_ZONES = [
+	'Asia/Shanghai',
+	'UTC',
+	'Asia/Tokyo',
+	'Asia/Seoul',
+	'Asia/Singapore',
+	'Europe/London',
+	'Europe/Paris',
+	'America/New_York',
+	'America/Los_Angeles',
+	'Australia/Sydney'
+]
 
-	// Sync refs with state
-	stopwatchTimeRef.current = stopwatchTime
-	timerTimeRef.current = timerTime
+const tabs: { value: ToolTab; label: string; icon: LucideIcon }[] = [
+	{ value: 'now', label: '当前时间', icon: Clock3 },
+	{ value: 'timestamp', label: '时间戳', icon: ArrowRightLeft },
+	{ value: 'diff', label: '日期差', icon: Calculator },
+	{ value: 'offset', label: '日期加减', icon: CalendarDays },
+	{ value: 'timezone', label: '时区换算', icon: Globe2 },
+	{ value: 'timer', label: '计时', icon: TimerReset }
+]
 
-	useEffect(() => {
-		if (isRunning) {
-			const now = performance.now()
-			if (startTimeRef.current === null) {
-				// Starting fresh
-				startTimeRef.current = now
-				if (mode === 'timer') {
-					initialTimerTimeRef.current = timerTimeRef.current
-				}
-			} else {
-				// Resuming from pause
-				if (mode === 'stopwatch') {
-					startTimeRef.current = now - pausedTimeRef.current
-				} else {
-					startTimeRef.current = now - (initialTimerTimeRef.current - timerTimeRef.current)
-				}
-			}
-
-			const updateTime = () => {
-				const currentTime = performance.now()
-				const elapsed = currentTime - startTimeRef.current!
-
-				if (mode === 'stopwatch') {
-					setStopwatchTime(Math.floor(elapsed))
-				} else {
-					const remaining = initialTimerTimeRef.current - elapsed
-					if (remaining <= 0) {
-						setTimerTime(0)
-						setIsRunning(false)
-						startTimeRef.current = null
-						return
-					}
-					setTimerTime(Math.floor(remaining))
-				}
-
-				intervalRef.current = requestAnimationFrame(updateTime)
-			}
-
-			intervalRef.current = requestAnimationFrame(updateTime)
-		} else {
-			if (intervalRef.current !== null) {
-				cancelAnimationFrame(intervalRef.current)
-				intervalRef.current = null
-			}
-			if (startTimeRef.current !== null) {
-				if (mode === 'stopwatch') {
-					pausedTimeRef.current = stopwatchTimeRef.current
-				}
-			}
-		}
-
-		return () => {
-			if (intervalRef.current !== null) {
-				cancelAnimationFrame(intervalRef.current)
-			}
-		}
-	}, [isRunning, mode])
-
-	const handleStartPause = () => {
-		if (mode === 'timer' && timerTime === 0) {
-			const totalMs = timerInput.hours * 3600000 + timerInput.minutes * 60000 + timerInput.seconds * 1000
-			if (totalMs <= 0) return
-			setTimerTime(totalMs)
-			initialTimerTimeRef.current = totalMs
-		}
-		if (!isRunning) {
-			startTimeRef.current = null
-		}
-		setIsRunning(prev => !prev)
-	}
-
-	const handleReset = () => {
-		setIsRunning(false)
-		startTimeRef.current = null
-		pausedTimeRef.current = 0
-		initialTimerTimeRef.current = 0
-		if (mode === 'stopwatch') {
-			setStopwatchTime(0)
-			setLaps([])
-		} else {
-			setTimerTime(0)
-			setTimerInput({ hours: 0, minutes: 0, seconds: 0 })
-		}
-	}
-
-	const handleLap = () => {
-		if (mode === 'stopwatch' && isRunning) {
-			setLaps(prev => [stopwatchTime, ...prev])
-		}
-	}
-
-	const formatTime = (ms: number) => {
-		const totalSeconds = Math.floor(ms / 1000)
-		const hours = Math.floor(totalSeconds / 3600)
-		const minutes = Math.floor((totalSeconds % 3600) / 60)
-		const seconds = totalSeconds % 60
-		const milliseconds = Math.floor((ms % 1000) / 10)
-
-		if (hours > 0) {
-			return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`
-		}
-		return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(2, '0')}`
-	}
-
-	const displayTime = mode === 'stopwatch' ? stopwatchTime : timerTime
-	const canStart = mode === 'timer' ? timerTime > 0 || timerInput.hours > 0 || timerInput.minutes > 0 || timerInput.seconds > 0 : true
-
-	return (
-		<div className='flex flex-col items-center px-6 pt-32 pb-12'>
-			<motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className='w-full max-w-[600px] space-y-8'>
-				{/* Mode Selector */}
-				<div className='card relative flex gap-4 rounded-xl p-2'>
-					<motion.button
-						whileHover={{ scale: 1.02 }}
-						whileTap={{ scale: 0.98 }}
-						onClick={() => {
-							setMode('stopwatch')
-							setIsRunning(false)
-							setTimerTime(0)
-							setTimerInput({ hours: 0, minutes: 0, seconds: 0 })
-							startTimeRef.current = null
-							pausedTimeRef.current = 0
-							initialTimerTimeRef.current = 0
-						}}
-						className={cn(
-							`flex-1 rounded-xl px-4 py-3 text-sm font-medium transition-all`,
-							mode === 'stopwatch' ? 'bg-brand text-white shadow-sm' : 'text-secondary hover:text-brand'
-						)}>
-						秒表
-					</motion.button>
-					<motion.button
-						whileHover={{ scale: 1.02 }}
-						whileTap={{ scale: 0.98 }}
-						onClick={() => {
-							setMode('timer')
-							setIsRunning(false)
-							setStopwatchTime(0)
-							setLaps([])
-							startTimeRef.current = null
-							pausedTimeRef.current = 0
-							initialTimerTimeRef.current = 0
-						}}
-						className={cn(
-							`flex-1 rounded-xl px-4 py-3 text-sm font-medium transition-all`,
-							mode === 'timer' ? 'bg-brand text-white shadow-sm' : 'text-secondary hover:text-brand'
-						)}>
-						计时器
-					</motion.button>
-				</div>
-
-				<motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className='card relative p-4'>
-					<div className='bg-secondary/20 flex items-center justify-center rounded-4xl p-8'>
-						<TimeDisplay time={displayTime} key={mode} />
-					</div>
-				</motion.div>
-
-				{/* Timer Input (only for timer mode when not running) */}
-				{mode === 'timer' && !isRunning && timerTime === 0 && (
-					<motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className='card relative space-y-4'>
-						<div className='flex items-center justify-center gap-4'>
-							<div className='flex flex-col items-center gap-2'>
-								<label className='text-secondary text-xs'>时</label>
-								<input
-									type='number'
-									min='0'
-									max='23'
-									value={timerInput.hours}
-									onChange={e => setTimerInput({ ...timerInput, hours: Math.max(0, Math.min(23, parseInt(e.target.value) || 0)) })}
-									className='no-spinner w-20 rounded-xl border bg-white/60 px-4 py-3 text-center text-2xl font-bold backdrop-blur-sm focus:bg-white/80'
-								/>
-							</div>
-							<div className='text-secondary mt-8 text-2xl font-bold'>:</div>
-							<div className='flex flex-col items-center gap-2'>
-								<label className='text-secondary text-xs'>分</label>
-								<input
-									type='number'
-									min='0'
-									max='59'
-									value={timerInput.minutes}
-									onChange={e => setTimerInput({ ...timerInput, minutes: Math.max(0, Math.min(59, parseInt(e.target.value) || 0)) })}
-									className='no-spinner w-20 rounded-xl border bg-white/60 px-4 py-3 text-center text-2xl font-bold backdrop-blur-sm focus:bg-white/80'
-								/>
-							</div>
-							<div className='text-secondary mt-8 text-2xl font-bold'>:</div>
-							<div className='flex flex-col items-center gap-2'>
-								<label className='text-secondary text-xs'>秒</label>
-								<input
-									type='number'
-									min='0'
-									max='59'
-									value={timerInput.seconds}
-									onChange={e => setTimerInput({ ...timerInput, seconds: Math.max(0, Math.min(59, parseInt(e.target.value) || 0)) })}
-									className='no-spinner w-20 rounded-xl border bg-white/60 px-4 py-3 text-center text-2xl font-bold backdrop-blur-sm focus:bg-white/80'
-								/>
-							</div>
-						</div>
-					</motion.div>
-				)}
-
-				{/* Control Buttons */}
-				<div className='flex items-center justify-center gap-4'>
-					{mode === 'stopwatch' && (
-						<motion.button
-							whileHover={{ scale: 1.05 }}
-							whileTap={{ scale: 0.95 }}
-							onClick={handleLap}
-							disabled={!isRunning}
-							className='flex h-16 w-16 items-center justify-center rounded-full border bg-white/60 text-sm font-medium backdrop-blur-sm transition-all hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50'>
-							计次
-						</motion.button>
-					)}
-					<motion.button
-						whileHover={{ scale: 1.05 }}
-						whileTap={{ scale: 0.95 }}
-						onClick={handleStartPause}
-						disabled={!canStart}
-						className={`flex h-20 w-20 items-center justify-center rounded-full text-white shadow-lg transition-all disabled:cursor-not-allowed disabled:opacity-50 ${
-							isRunning ? 'bg-brand-secondary hover:bg-brand-secondary/80' : 'bg-brand hover:bg-brand/80'
-						}`}>
-						{isRunning ? <Pause className='h-8 w-8' /> : <Play className='h-8 w-8' />}
-					</motion.button>
-					<motion.button
-						whileHover={{ scale: 1.05 }}
-						whileTap={{ scale: 0.95 }}
-						onClick={handleReset}
-						disabled={isRunning && mode === 'stopwatch'}
-						className='flex h-16 w-16 items-center justify-center rounded-full border bg-white/60 backdrop-blur-sm transition-all hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50'>
-						<RotateCcw className='h-5 w-5' />
-					</motion.button>
-				</div>
-
-				{mode === 'stopwatch' && laps.length > 0 && (
-					<div className='grid grid-cols-3 gap-3'>
-						{laps.map((lap, index) => (
-							<motion.div
-								layout
-								initial={{ opacity: 0, scale: 0.6 }}
-								animate={{ opacity: 1, scale: 1 }}
-								key={lap}
-								className='bg-card flex items-center justify-center rounded-2xl px-6 py-4'>
-								<span className='font-mono text-sm font-medium'>
-									<span className='text-secondary'>{laps.length - index}.</span> {formatTime(lap)}
-								</span>
-							</motion.div>
-						))}
-					</div>
-				)}
-			</motion.div>
-		</div>
-	)
+const emptyDuration: DurationFields = {
+	years: '0',
+	months: '0',
+	days: '0',
+	hours: '0',
+	minutes: '0',
+	seconds: '0'
 }
 
-interface TimeDisplayProps {
-	time: number
+function pad(value: number) {
+	return String(value).padStart(2, '0')
 }
 
-function TimeDisplay({ time }: TimeDisplayProps) {
-	const totalSeconds = Math.floor(time / 1000)
+function formatDateTimeInput(date: Date) {
+	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
+
+function formatLocal(date: Date) {
+	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
+
+function formatUtc(date: Date) {
+	return `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())} UTC`
+}
+
+function formatTimer(ms: number) {
+	const safe = Math.max(0, Math.floor(ms))
+	const totalSeconds = Math.floor(safe / 1000)
 	const hours = Math.floor(totalSeconds / 3600)
 	const minutes = Math.floor((totalSeconds % 3600) / 60)
 	const seconds = totalSeconds % 60
-	const milliseconds = Math.floor((time % 1000) / 10)
+	const milliseconds = Math.floor((safe % 1000) / 10)
+	return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}.${pad(milliseconds)}`
+}
 
-	const hoursStr = hours.toString().padStart(2, '0')
-	const minutesStr = minutes.toString().padStart(2, '0')
-	const secondsStr = seconds.toString().padStart(2, '0')
-	const millisecondsStr = milliseconds.toString().padStart(2, '0')
+function parseDateInput(value: string) {
+	if (!value) return null
+	const date = new Date(value)
+	return Number.isNaN(date.getTime()) ? null : date
+}
 
+function parseTimestamp(value: string, unit: TimestampUnit) {
+	const raw = value.trim().replace(/\s+/g, '')
+	if (!raw) return { error: '请输入时间戳。', date: null, detectedUnit: null as TimestampUnit | null }
+	if (!/^-?\d+(\.\d+)?$/.test(raw)) return { error: '时间戳只能包含数字、小数点或负号。', date: null, detectedUnit: null as TimestampUnit | null }
+
+	const numeric = Number(raw)
+	if (!Number.isFinite(numeric)) return { error: '时间戳超出可解析范围。', date: null, detectedUnit: null as TimestampUnit | null }
+
+	const detectedUnit: TimestampUnit = unit === 'auto' ? (Math.abs(numeric) < 100000000000 ? 'seconds' : 'milliseconds') : unit
+	const ms = detectedUnit === 'seconds' ? numeric * 1000 : numeric
+	const date = new Date(ms)
+
+	if (Number.isNaN(date.getTime())) return { error: '无法转换为有效日期。', date: null, detectedUnit }
+	return { error: '', date, detectedUnit }
+}
+
+function parseDurationValue(value: string, max = 999999) {
+	if (!value.trim()) return 0
+	const numeric = Number(value)
+	if (!Number.isFinite(numeric)) return 0
+	return Math.min(max, Math.max(0, Math.trunc(numeric)))
+}
+
+function durationToMs(duration: DurationFields) {
 	return (
-		<div className='flex items-center justify-center gap-1.5'>
-			{hours > 0 && (
-				<>
-					<SevenSegmentDigit value={parseInt(hoursStr[0])} />
-					<SevenSegmentDigit value={parseInt(hoursStr[1])} />
-					<Colon />
-				</>
-			)}
-			<SevenSegmentDigit value={parseInt(minutesStr[0])} />
-			<SevenSegmentDigit value={parseInt(minutesStr[1])} />
-			<Colon />
-			<SevenSegmentDigit value={parseInt(secondsStr[0])} />
-			<SevenSegmentDigit value={parseInt(secondsStr[1])} />
-			<Colon />
-			<SevenSegmentDigit value={parseInt(millisecondsStr[0])} />
-			<SevenSegmentDigit value={parseInt(millisecondsStr[1])} />
-		</div>
+		parseDurationValue(duration.hours, 99999) * 3600000 +
+		parseDurationValue(duration.minutes, 99999) * 60000 +
+		parseDurationValue(duration.seconds, 99999) * 1000
 	)
 }
 
-interface SevenSegmentDigitProps {
-	value: number
-	className?: string
+function addDuration(date: Date, duration: DurationFields, mode: 'add' | 'subtract') {
+	const result = new Date(date.getTime())
+	const sign = mode === 'add' ? 1 : -1
+	result.setFullYear(result.getFullYear() + sign * parseDurationValue(duration.years, 9999))
+	result.setMonth(result.getMonth() + sign * parseDurationValue(duration.months, 99999))
+	result.setDate(result.getDate() + sign * parseDurationValue(duration.days, 999999))
+	result.setHours(result.getHours() + sign * parseDurationValue(duration.hours, 999999))
+	result.setMinutes(result.getMinutes() + sign * parseDurationValue(duration.minutes, 999999))
+	result.setSeconds(result.getSeconds() + sign * parseDurationValue(duration.seconds, 999999))
+	return result
 }
 
-function SevenSegmentDigit({ value, className }: SevenSegmentDigitProps) {
-	const segmentMap = {
-		0: [true, true, true, true, true, true, false],
-		1: [false, true, true, false, false, false, false],
-		2: [true, true, false, true, true, false, true],
-		3: [true, true, true, true, false, false, true],
-		4: [false, true, true, false, false, true, true],
-		5: [true, false, true, true, false, true, true],
-		6: [true, false, true, true, true, true, true],
-		7: [true, true, true, false, false, false, false],
-		8: [true, true, true, true, true, true, true],
-		9: [true, true, true, true, false, true, true]
+function describeDuration(ms: number) {
+	const sign = ms < 0 ? '-' : ''
+	let rest = Math.abs(Math.floor(ms / 1000))
+	const days = Math.floor(rest / 86400)
+	rest %= 86400
+	const hours = Math.floor(rest / 3600)
+	rest %= 3600
+	const minutes = Math.floor(rest / 60)
+	const seconds = rest % 60
+	return {
+		sign,
+		days,
+		hours,
+		minutes,
+		seconds,
+		text: `${sign}${days} 天 ${hours} 小时 ${minutes} 分 ${seconds} 秒`
+	}
+}
+
+function getTimeZoneParts(timeZone: string, timestamp: number) {
+	const formatter = new Intl.DateTimeFormat('en-US', {
+		timeZone,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
+		second: '2-digit',
+		hourCycle: 'h23'
+	})
+	const parts = Object.fromEntries(formatter.formatToParts(new Date(timestamp)).map(part => [part.type, part.value]))
+	return {
+		year: Number(parts.year),
+		month: Number(parts.month),
+		day: Number(parts.day),
+		hour: Number(parts.hour),
+		minute: Number(parts.minute),
+		second: Number(parts.second)
+	}
+}
+
+function getTimeZoneOffsetMs(timeZone: string, timestamp: number) {
+	const parts = getTimeZoneParts(timeZone, timestamp)
+	const asUtc = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second)
+	return asUtc - timestamp
+}
+
+function parseDateTimeParts(value: string) {
+	const match = value.match(/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?$/)
+	if (!match) return null
+	return {
+		year: Number(match[1]),
+		month: Number(match[2]),
+		day: Number(match[3]),
+		hour: Number(match[4]),
+		minute: Number(match[5]),
+		second: Number(match[6] || 0)
+	}
+}
+
+function zonedDateTimeToTimestamp(value: string, timeZone: string) {
+	const parts = parseDateTimeParts(value)
+	if (!parts) return null
+	const utcGuess = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second)
+	let timestamp = utcGuess - getTimeZoneOffsetMs(timeZone, utcGuess)
+	const refined = utcGuess - getTimeZoneOffsetMs(timeZone, timestamp)
+	if (Math.abs(refined - timestamp) > 1000) timestamp = refined
+	const date = new Date(timestamp)
+	return Number.isNaN(date.getTime()) ? null : timestamp
+}
+
+function formatInZone(timestamp: number, timeZone: string) {
+	return new Intl.DateTimeFormat('zh-CN', {
+		timeZone,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+		hour: '2-digit',
+		minute: '2-digit',
+		second: '2-digit',
+		hourCycle: 'h23'
+	}).format(new Date(timestamp))
+}
+
+function setDurationField(duration: DurationFields, key: keyof DurationFields, value: string): DurationFields {
+	const cleaned = value.replace(/[^\d]/g, '').replace(/^0+(\d)/, '$1')
+	return { ...duration, [key]: cleaned || '0' }
+}
+
+export default function ClockPage() {
+	const [activeTab, setActiveTab] = useState<ToolTab>('now')
+	const [now, setNow] = useState<Date | null>(null)
+	const [copiedId, setCopiedId] = useState<string | null>(null)
+	const [timestampInput, setTimestampInput] = useState('')
+	const [timestampUnit, setTimestampUnit] = useState<TimestampUnit>('auto')
+	const [dateInput, setDateInput] = useState('')
+	const [diffStart, setDiffStart] = useState('')
+	const [diffEnd, setDiffEnd] = useState('')
+	const [offsetBase, setOffsetBase] = useState('')
+	const [offsetMode, setOffsetMode] = useState<'add' | 'subtract'>('add')
+	const [offsetDuration, setOffsetDuration] = useState<DurationFields>(emptyDuration)
+	const [zoneDateTime, setZoneDateTime] = useState('')
+	const [localTimeZone, setLocalTimeZone] = useState(DEFAULT_TIME_ZONE)
+	const [sourceZone, setSourceZone] = useState(DEFAULT_TIME_ZONE)
+	const [targetZone, setTargetZone] = useState('UTC')
+	const [timerMode, setTimerMode] = useState<TimerMode>('stopwatch')
+	const [timerRunning, setTimerRunning] = useState(false)
+	const [stopwatchMs, setStopwatchMs] = useState(0)
+	const [countdownMs, setCountdownMs] = useState(0)
+	const [countdownInput, setCountdownInput] = useState<DurationFields>({ ...emptyDuration, minutes: '25' })
+	const rafRef = useRef<number | null>(null)
+
+	useEffect(() => {
+		const current = new Date()
+		const currentInput = formatDateTimeInput(current)
+		const detectedTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || DEFAULT_TIME_ZONE
+		setNow(current)
+		setLocalTimeZone(detectedTimeZone)
+		setSourceZone(current => (current === DEFAULT_TIME_ZONE ? detectedTimeZone : current))
+		setTimestampInput(String(Math.floor(current.getTime() / 1000)))
+		setDateInput(currentInput)
+		setDiffStart(currentInput)
+		setDiffEnd(formatDateTimeInput(new Date(current.getTime() + 86400000)))
+		setOffsetBase(currentInput)
+		setZoneDateTime(currentInput)
+
+		const interval = window.setInterval(() => setNow(new Date()), 500)
+		return () => window.clearInterval(interval)
+	}, [])
+
+	useEffect(() => {
+		if (!timerRunning) return
+		const start = performance.now()
+		const base = timerMode === 'stopwatch' ? stopwatchMs : countdownMs
+
+		const tick = () => {
+			const elapsed = performance.now() - start
+			if (timerMode === 'stopwatch') {
+				setStopwatchMs(base + elapsed)
+				rafRef.current = requestAnimationFrame(tick)
+				return
+			}
+
+			const remaining = base - elapsed
+			if (remaining <= 0) {
+				setCountdownMs(0)
+				setTimerRunning(false)
+				return
+			}
+			setCountdownMs(remaining)
+			rafRef.current = requestAnimationFrame(tick)
+		}
+
+		rafRef.current = requestAnimationFrame(tick)
+		return () => {
+			if (rafRef.current !== null) cancelAnimationFrame(rafRef.current)
+		}
+	}, [timerRunning, timerMode])
+
+	const timestampResult = useMemo(() => parseTimestamp(timestampInput, timestampUnit), [timestampInput, timestampUnit])
+	const parsedDate = useMemo(() => parseDateInput(dateInput), [dateInput])
+	const diffStartDate = useMemo(() => parseDateInput(diffStart), [diffStart])
+	const diffEndDate = useMemo(() => parseDateInput(diffEnd), [diffEnd])
+	const offsetBaseDate = useMemo(() => parseDateInput(offsetBase), [offsetBase])
+	const offsetResult = useMemo(() => (offsetBaseDate ? addDuration(offsetBaseDate, offsetDuration, offsetMode) : null), [offsetBaseDate, offsetDuration, offsetMode])
+	const zoneTimestamp = useMemo(() => (zoneDateTime ? zonedDateTimeToTimestamp(zoneDateTime, sourceZone) : null), [zoneDateTime, sourceZone])
+	const diffResult = diffStartDate && diffEndDate ? describeDuration(diffEndDate.getTime() - diffStartDate.getTime()) : null
+	const countdownInputMs = durationToMs(countdownInput)
+	const canStartTimer = timerMode === 'stopwatch' || countdownMs > 0 || countdownInputMs > 0
+	const timeZones = useMemo(() => Array.from(new Set([localTimeZone, ...COMMON_TIME_ZONES])), [localTimeZone])
+
+	const copyText = async (text: string, id: string) => {
+		if (!text) return
+		try {
+			if (navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(text)
+			} else {
+				const textarea = document.createElement('textarea')
+				textarea.value = text
+				textarea.style.position = 'fixed'
+				textarea.style.opacity = '0'
+				document.body.appendChild(textarea)
+				textarea.select()
+				document.execCommand('copy')
+				textarea.remove()
+			}
+			setCopiedId(id)
+			window.setTimeout(() => setCopiedId(current => (current === id ? null : current)), 1500)
+		} catch (error) {
+			console.error('Failed to copy:', error)
+		}
 	}
 
-	const segments = segmentMap[value as keyof typeof segmentMap] || segmentMap[0]
-	const activeColor = 'var(--color-primary)'
-	const inactiveColor = 'rgba(0, 0, 0, 0.05)'
+	const setAllToNow = () => {
+		const current = new Date()
+		const input = formatDateTimeInput(current)
+		setTimestampInput(String(Math.floor(current.getTime() / 1000)))
+		setDateInput(input)
+		setDiffStart(input)
+		setOffsetBase(input)
+		setZoneDateTime(input)
+	}
+
+	const toggleTimer = () => {
+		if (timerRunning) {
+			setTimerRunning(false)
+			return
+		}
+		if (timerMode === 'countdown' && countdownMs <= 0) {
+			if (countdownInputMs <= 0) return
+			setCountdownMs(countdownInputMs)
+		}
+		setTimerRunning(true)
+	}
+
+	const resetTimer = () => {
+		setTimerRunning(false)
+		setStopwatchMs(0)
+		setCountdownMs(0)
+	}
 
 	return (
-		<svg width='29' height='52' viewBox='0 0 29 52' fill='none' xmlns='http://www.w3.org/2000/svg' className={className}>
-			<path
-				d='M4.20248 3.49482C2.82797 2.27303 3.69218 0 5.53121 0H22.6867C24.5522 0 25.4019 2.32821 23.975 3.52982L23.5791 3.86316C23.2186 4.16681 22.7623 4.33333 22.2909 4.33333H5.90621C5.41638 4.33333 4.94359 4.15358 4.57748 3.82815L4.20248 3.49482Z'
-				fill={segments[0] ? activeColor : inactiveColor}
-			/>
-			<path
-				d='M3.85122 24.13C4.16644 23.936 4.5293 23.8333 4.89942 23.8333H23.3022C23.6503 23.8333 23.9923 23.9242 24.2945 24.0969L24.5862 24.2635C25.9298 25.0313 25.9298 26.9687 24.5862 27.7365L24.2945 27.9032C23.9923 28.0758 23.6503 28.1667 23.3022 28.1667H4.89942C4.5293 28.1667 4.16644 28.064 3.85122 27.87L3.58039 27.7033C2.31131 26.9224 2.31132 25.0777 3.58039 24.2967L3.85122 24.13Z'
-				fill={segments[6] ? activeColor : inactiveColor}
-			/>
-			<path
-				d='M3.06 23.5458C1.7279 24.3784 -8.31295e-08 23.4207 -1.47217e-07 21.8498L-8.06095e-07 5.69981C-8.77526e-07 3.94893 2.09055 3.04323 3.36788 4.24073L3.70121 4.55323C4.10452 4.93133 4.33333 5.45949 4.33333 6.01231L4.33333 21.6415C4.33333 22.3311 3.97809 22.972 3.39333 23.3375L3.06 23.5458Z'
-				fill={segments[5] ? activeColor : inactiveColor}
-			/>
-			<path
-				d='M24.8497 4.25654C26.1428 3.12502 28.1667 4.04338 28.1667 5.76169L28.1667 21.8498C28.1667 23.4207 26.4388 24.3784 25.1067 23.5458L24.7734 23.3375C24.1886 22.972 23.8334 22.3311 23.8334 21.6415L23.8334 6.05336C23.8334 5.47663 24.0823 4.92798 24.5163 4.54821L24.8497 4.25654Z'
-				fill={segments[1] ? activeColor : inactiveColor}
-			/>
-			<path
-				d='M23.9259 48.6321C25.1234 49.9094 24.2177 52 22.4669 52L5.69978 52C3.9489 52 3.04321 49.9094 4.24071 48.6321L4.55321 48.2988C4.9313 47.8955 5.45947 47.6667 6.01228 47.6667L22.1544 47.6667C22.7072 47.6667 23.2353 47.8955 23.6134 48.2988L23.9259 48.6321Z'
-				fill={segments[3] ? activeColor : inactiveColor}
-			/>
-			<path
-				d='M25.1862 28.489C26.5194 27.7391 28.1667 28.7025 28.1667 30.2322L28.1667 46.6299C28.1667 48.4117 26.0124 49.3041 24.7525 48.0441L24.4191 47.7108C24.0441 47.3357 23.8334 46.827 23.8334 46.2966L23.8334 30.4197C23.8334 29.6971 24.2231 29.0308 24.8528 28.6765L25.1862 28.489Z'
-				fill={segments[2] ? activeColor : inactiveColor}
-			/>
-			<path
-				d='M3.4564 47.7859C2.21509 49.1048 4.23823e-07 48.2263 6.6133e-07 46.4152L2.79423e-06 30.1501C3.00022e-06 28.5793 1.72791 27.6216 3.06 28.4541L3.39333 28.6625C3.9781 29.028 4.33334 29.6689 4.33334 30.3585L4.33333 46.061C4.33333 46.5705 4.13891 47.0607 3.78973 47.4317L3.4564 47.7859Z'
-				fill={segments[4] ? activeColor : inactiveColor}
-			/>
-		</svg>
+		<div className='relative px-6 pt-28 pb-12 text-sm max-sm:px-4 max-sm:pt-24'>
+			<div className='mx-auto flex w-full max-w-6xl flex-col gap-6'>
+				<motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className='text-center'>
+					<h1 className='text-3xl font-semibold'>时间工具</h1>
+					<p className='text-secondary mt-3'>时间戳、日期差、时区换算、倒计时集中处理</p>
+				</motion.div>
+
+				<motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className='card relative flex flex-wrap justify-center gap-2 p-2'>
+					{tabs.map(item => {
+						const Icon = item.icon
+						return (
+							<button
+								key={item.value}
+								type='button'
+								onClick={() => setActiveTab(item.value)}
+								className={cn(
+									'btn-rounded flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors',
+									activeTab === item.value ? 'bg-brand text-white shadow-sm' : 'text-secondary hover:text-brand hover:bg-white/70'
+								)}>
+								<Icon className='h-4 w-4' />
+								{item.label}
+							</button>
+						)
+					})}
+				</motion.div>
+
+				{activeTab === 'now' && (
+					<ToolCard title='当前时间' icon={Clock3}>
+						<div className='grid gap-3 md:grid-cols-2'>
+							<OutputRow label='本地时间' value={now ? formatLocal(now) : '获取中'} copyId='now-local' copiedId={copiedId} onCopy={copyText} />
+							<OutputRow label='UTC 时间' value={now ? formatUtc(now) : '获取中'} copyId='now-utc' copiedId={copiedId} onCopy={copyText} />
+							<OutputRow label='Unix 秒' value={now ? String(Math.floor(now.getTime() / 1000)) : '获取中'} copyId='now-seconds' copiedId={copiedId} onCopy={copyText} />
+							<OutputRow label='Unix 毫秒' value={now ? String(now.getTime()) : '获取中'} copyId='now-ms' copiedId={copiedId} onCopy={copyText} />
+							<OutputRow label='ISO 8601' value={now ? now.toISOString() : '获取中'} copyId='now-iso' copiedId={copiedId} onCopy={copyText} />
+							<OutputRow label='当前时区' value={localTimeZone} copyId='now-zone' copiedId={copiedId} onCopy={copyText} />
+						</div>
+						<div className='mt-4 flex flex-wrap gap-2'>
+							<ActionButton onClick={setAllToNow}>填入当前时间</ActionButton>
+						</div>
+					</ToolCard>
+				)}
+
+				{activeTab === 'timestamp' && (
+					<div className='grid gap-6 lg:grid-cols-2'>
+						<ToolCard title='时间戳转日期' icon={ArrowRightLeft}>
+							<div className='grid gap-4'>
+								<Field label='时间戳'>
+									<input
+										value={timestampInput}
+										onChange={event => setTimestampInput(event.target.value)}
+										inputMode='decimal'
+										className='w-full rounded-2xl border bg-white/60 px-4 py-3 font-mono text-sm'
+										placeholder='例如 1764567890 或 1764567890000'
+									/>
+								</Field>
+								<Field label='单位'>
+									<div className='flex flex-wrap gap-2'>
+										{[
+											['auto', '自动识别'],
+											['seconds', '秒'],
+											['milliseconds', '毫秒']
+										].map(([value, label]) => (
+											<button
+												key={value}
+												type='button'
+												onClick={() => setTimestampUnit(value as TimestampUnit)}
+												className={cn(
+													'btn-rounded px-4 py-2 text-sm font-medium transition-colors',
+													timestampUnit === value ? 'bg-brand text-white' : 'bg-white/60 text-secondary hover:text-brand'
+												)}>
+												{label}
+											</button>
+										))}
+									</div>
+								</Field>
+								{timestampResult.error && <ErrorText>{timestampResult.error}</ErrorText>}
+							</div>
+							<div className='mt-5 grid gap-3'>
+								<OutputRow
+									label='识别单位'
+									value={timestampResult.detectedUnit === 'milliseconds' ? '毫秒' : timestampResult.detectedUnit === 'seconds' ? '秒' : '-'}
+								/>
+								<OutputRow
+									label='本地时间'
+									value={timestampResult.date ? formatLocal(timestampResult.date) : '-'}
+									copyId='timestamp-local'
+									copiedId={copiedId}
+									onCopy={copyText}
+								/>
+								<OutputRow label='UTC 时间' value={timestampResult.date ? formatUtc(timestampResult.date) : '-'} copyId='timestamp-utc' copiedId={copiedId} onCopy={copyText} />
+								<OutputRow label='ISO 8601' value={timestampResult.date ? timestampResult.date.toISOString() : '-'} copyId='timestamp-iso' copiedId={copiedId} onCopy={copyText} />
+							</div>
+						</ToolCard>
+
+						<ToolCard title='日期转时间戳' icon={CalendarDays}>
+							<Field label='本地日期时间'>
+								<input value={dateInput} onChange={event => setDateInput(event.target.value)} type='datetime-local' step='1' className='w-full rounded-2xl border bg-white/60 px-4 py-3 text-sm' />
+							</Field>
+							{!parsedDate && <ErrorText>请选择有效日期时间。</ErrorText>}
+							<div className='mt-5 grid gap-3'>
+								<OutputRow label='Unix 秒' value={parsedDate ? String(Math.floor(parsedDate.getTime() / 1000)) : '-'} copyId='date-seconds' copiedId={copiedId} onCopy={copyText} />
+								<OutputRow label='Unix 毫秒' value={parsedDate ? String(parsedDate.getTime()) : '-'} copyId='date-ms' copiedId={copiedId} onCopy={copyText} />
+								<OutputRow label='UTC 时间' value={parsedDate ? formatUtc(parsedDate) : '-'} copyId='date-utc' copiedId={copiedId} onCopy={copyText} />
+							</div>
+							<div className='mt-4'>
+								<ActionButton onClick={() => setDateInput(formatDateTimeInput(new Date()))}>使用当前时间</ActionButton>
+							</div>
+						</ToolCard>
+					</div>
+				)}
+
+				{activeTab === 'diff' && (
+					<ToolCard title='日期差计算' icon={Calculator}>
+						<div className='grid gap-4 md:grid-cols-2'>
+							<Field label='开始时间'>
+								<input value={diffStart} onChange={event => setDiffStart(event.target.value)} type='datetime-local' step='1' className='w-full rounded-2xl border bg-white/60 px-4 py-3 text-sm' />
+							</Field>
+							<Field label='结束时间'>
+								<input value={diffEnd} onChange={event => setDiffEnd(event.target.value)} type='datetime-local' step='1' className='w-full rounded-2xl border bg-white/60 px-4 py-3 text-sm' />
+							</Field>
+						</div>
+						{(!diffStartDate || !diffEndDate) && <ErrorText>开始和结束时间都需要有效。</ErrorText>}
+						<div className='mt-5 grid gap-3 md:grid-cols-2'>
+							<OutputRow label='相差' value={diffResult?.text ?? '-'} copyId='diff-text' copiedId={copiedId} onCopy={copyText} />
+							<OutputRow label='总天数' value={diffStartDate && diffEndDate ? `${((diffEndDate.getTime() - diffStartDate.getTime()) / 86400000).toFixed(6)} 天` : '-'} />
+							<OutputRow label='总小时' value={diffStartDate && diffEndDate ? `${((diffEndDate.getTime() - diffStartDate.getTime()) / 3600000).toFixed(4)} 小时` : '-'} />
+							<OutputRow label='总秒数' value={diffStartDate && diffEndDate ? `${Math.trunc((diffEndDate.getTime() - diffStartDate.getTime()) / 1000)} 秒` : '-'} />
+						</div>
+						<div className='mt-4 flex flex-wrap gap-2'>
+							<ActionButton onClick={() => setDiffStart(formatDateTimeInput(new Date()))}>开始设为现在</ActionButton>
+							<ActionButton onClick={() => setDiffEnd(formatDateTimeInput(new Date()))}>结束设为现在</ActionButton>
+							<ActionButton
+								onClick={() => {
+									setDiffStart(diffEnd)
+									setDiffEnd(diffStart)
+								}}>
+								交换
+							</ActionButton>
+						</div>
+					</ToolCard>
+				)}
+
+				{activeTab === 'offset' && (
+					<ToolCard title='日期加减' icon={CalendarDays}>
+						<div className='grid gap-4 lg:grid-cols-[1fr_auto]'>
+							<Field label='基准时间'>
+								<input value={offsetBase} onChange={event => setOffsetBase(event.target.value)} type='datetime-local' step='1' className='w-full rounded-2xl border bg-white/60 px-4 py-3 text-sm' />
+							</Field>
+							<Field label='运算'>
+								<div className='flex gap-2'>
+									<button type='button' onClick={() => setOffsetMode('add')} className={cn('btn-rounded px-4 py-3 font-medium', offsetMode === 'add' ? 'bg-brand text-white' : 'bg-white/60 text-secondary')}>
+										加
+									</button>
+									<button
+										type='button'
+										onClick={() => setOffsetMode('subtract')}
+										className={cn('btn-rounded px-4 py-3 font-medium', offsetMode === 'subtract' ? 'bg-brand text-white' : 'bg-white/60 text-secondary')}>
+										减
+									</button>
+								</div>
+							</Field>
+						</div>
+						<div className='mt-4 grid grid-cols-2 gap-3 md:grid-cols-6'>
+							{(['years', 'months', 'days', 'hours', 'minutes', 'seconds'] as (keyof DurationFields)[]).map(key => (
+								<Field key={key} label={{ years: '年', months: '月', days: '日', hours: '时', minutes: '分', seconds: '秒' }[key]}>
+									<input
+										value={offsetDuration[key]}
+										onChange={event => setOffsetDuration(current => setDurationField(current, key, event.target.value))}
+										inputMode='numeric'
+										className='no-spinner w-full rounded-2xl border bg-white/60 px-3 py-3 text-center font-mono text-sm'
+									/>
+								</Field>
+							))}
+						</div>
+						{!offsetBaseDate && <ErrorText>请选择有效的基准时间。</ErrorText>}
+						<div className='mt-5 grid gap-3 md:grid-cols-2'>
+							<OutputRow label='计算结果' value={offsetResult ? formatLocal(offsetResult) : '-'} copyId='offset-local' copiedId={copiedId} onCopy={copyText} />
+							<OutputRow label='结果时间戳' value={offsetResult ? String(offsetResult.getTime()) : '-'} copyId='offset-ms' copiedId={copiedId} onCopy={copyText} />
+						</div>
+						<div className='mt-4 flex flex-wrap gap-2'>
+							<ActionButton onClick={() => setOffsetBase(formatDateTimeInput(new Date()))}>基准设为现在</ActionButton>
+							<ActionButton onClick={() => setOffsetDuration(emptyDuration)}>清零</ActionButton>
+						</div>
+					</ToolCard>
+				)}
+
+				{activeTab === 'timezone' && (
+					<ToolCard title='时区换算' icon={Globe2}>
+						<div className='grid gap-4 lg:grid-cols-3'>
+							<Field label='源时间'>
+								<input value={zoneDateTime} onChange={event => setZoneDateTime(event.target.value)} type='datetime-local' step='1' className='w-full rounded-2xl border bg-white/60 px-4 py-3 text-sm' />
+							</Field>
+							<Field label='源时区'>
+								<TimeZoneSelect value={sourceZone} zones={timeZones} onChange={setSourceZone} />
+							</Field>
+							<Field label='目标时区'>
+								<TimeZoneSelect value={targetZone} zones={timeZones} onChange={setTargetZone} />
+							</Field>
+						</div>
+						{zoneTimestamp === null && <ErrorText>请选择有效的源时间。</ErrorText>}
+						<div className='mt-5 grid gap-3 md:grid-cols-2'>
+							<OutputRow label='目标时间' value={zoneTimestamp !== null ? formatInZone(zoneTimestamp, targetZone) : '-'} copyId='zone-target' copiedId={copiedId} onCopy={copyText} />
+							<OutputRow label='源时区时间' value={zoneTimestamp !== null ? formatInZone(zoneTimestamp, sourceZone) : '-'} copyId='zone-source' copiedId={copiedId} onCopy={copyText} />
+							<OutputRow label='UTC 时间' value={zoneTimestamp !== null ? formatUtc(new Date(zoneTimestamp)) : '-'} copyId='zone-utc' copiedId={copiedId} onCopy={copyText} />
+							<OutputRow label='Unix 毫秒' value={zoneTimestamp !== null ? String(zoneTimestamp) : '-'} copyId='zone-ms' copiedId={copiedId} onCopy={copyText} />
+						</div>
+						<div className='mt-4 flex flex-wrap gap-2'>
+							<ActionButton onClick={() => setZoneDateTime(formatDateTimeInput(new Date()))}>源时间设为现在</ActionButton>
+							<ActionButton
+								onClick={() => {
+									setSourceZone(targetZone)
+									setTargetZone(sourceZone)
+								}}>
+								交换时区
+							</ActionButton>
+						</div>
+					</ToolCard>
+				)}
+
+				{activeTab === 'timer' && (
+					<ToolCard title='秒表 / 倒计时' icon={TimerReset}>
+						<div className='flex flex-wrap justify-center gap-2'>
+							<button type='button' onClick={() => setTimerMode('stopwatch')} className={cn('btn-rounded px-4 py-2 font-medium', timerMode === 'stopwatch' ? 'bg-brand text-white' : 'bg-white/60 text-secondary')}>
+								秒表
+							</button>
+							<button type='button' onClick={() => setTimerMode('countdown')} className={cn('btn-rounded px-4 py-2 font-medium', timerMode === 'countdown' ? 'bg-brand text-white' : 'bg-white/60 text-secondary')}>
+								倒计时
+							</button>
+						</div>
+						<div className='my-8 text-center font-mono text-5xl font-semibold tracking-normal max-sm:text-3xl'>
+							{timerMode === 'stopwatch' ? formatTimer(stopwatchMs) : formatTimer(countdownMs > 0 ? countdownMs : countdownInputMs)}
+						</div>
+						{timerMode === 'countdown' && (
+							<div className='mx-auto grid max-w-xl grid-cols-3 gap-3'>
+								{(['hours', 'minutes', 'seconds'] as (keyof DurationFields)[]).map(key => (
+									<Field key={key} label={{ hours: '时', minutes: '分', seconds: '秒' }[key]}>
+										<input
+											value={countdownInput[key]}
+											disabled={timerRunning}
+											onChange={event => setCountdownInput(current => setDurationField(current, key, event.target.value))}
+											inputMode='numeric'
+											className='no-spinner w-full rounded-2xl border bg-white/60 px-3 py-3 text-center font-mono text-sm disabled:opacity-60'
+										/>
+									</Field>
+								))}
+							</div>
+						)}
+						<div className='mt-6 flex justify-center gap-3'>
+							<button
+								type='button'
+								onClick={toggleTimer}
+								disabled={!canStartTimer}
+								className='bg-brand btn-rounded flex h-14 min-w-28 items-center justify-center gap-2 px-5 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50'>
+								{timerRunning ? <Pause className='h-5 w-5' /> : <Play className='h-5 w-5' />}
+								{timerRunning ? '暂停' : '开始'}
+							</button>
+							<button type='button' onClick={resetTimer} className='btn-rounded flex h-14 min-w-28 items-center justify-center gap-2 border bg-white/60 px-5 font-medium'>
+								<RotateCcw className='h-5 w-5' />
+								重置
+							</button>
+						</div>
+						{timerMode === 'countdown' && countdownInputMs <= 0 && countdownMs <= 0 && <ErrorText>倒计时时长需要大于 0。</ErrorText>}
+					</ToolCard>
+				)}
+			</div>
+		</div>
 	)
 }
 
-function Colon({ className }: { className?: string }) {
+function ToolCard({ title, icon: Icon, children }: { title: string; icon: LucideIcon; children: ReactNode }) {
 	return (
-		<div className={`flex flex-col justify-center gap-2 ${className}`}>
-			<div className='bg-primary h-1.5 w-1.5' />
-			<div className='bg-primary h-1.5 w-1.5' />
+		<motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className='card relative'>
+			<div className='mb-5 flex items-center gap-3'>
+				<div className='bg-brand/10 text-brand flex h-10 w-10 items-center justify-center rounded-full'>
+					<Icon className='h-5 w-5' />
+				</div>
+				<h2 className='text-lg font-semibold'>{title}</h2>
+			</div>
+			{children}
+		</motion.section>
+	)
+}
+
+function Field({ label, children }: { label: string; children: ReactNode }) {
+	return (
+		<label className='block'>
+			<span className='text-secondary mb-2 block text-xs font-medium'>{label}</span>
+			{children}
+		</label>
+	)
+}
+
+function OutputRow({ label, value, copyId, copiedId, onCopy }: { label: string; value: string; copyId?: string; copiedId?: string | null; onCopy?: (text: string, id: string) => void }) {
+	const canCopy = !!copyId && !!onCopy && value !== '-' && value !== '获取中'
+	const copied = copiedId === copyId
+	return (
+		<div className='flex min-h-14 items-center justify-between gap-3 rounded-2xl border bg-white/50 px-4 py-3'>
+			<div className='min-w-0'>
+				<p className='text-secondary text-xs'>{label}</p>
+				<p className='truncate font-mono text-sm tracking-normal'>{value}</p>
+			</div>
+			{copyId && onCopy && (
+				<button
+					type='button'
+					disabled={!canCopy}
+					onClick={() => onCopy(value, copyId)}
+					className='btn-rounded flex h-9 w-9 shrink-0 items-center justify-center border bg-white/60 text-secondary transition hover:text-brand disabled:cursor-not-allowed disabled:opacity-40'
+					aria-label={`复制${label}`}>
+					{copied ? <Check className='h-4 w-4' /> : <Copy className='h-4 w-4' />}
+				</button>
+			)}
 		</div>
 	)
+}
+
+function TimeZoneSelect({ value, zones, onChange }: { value: string; zones: string[]; onChange: (value: string) => void }) {
+	return (
+		<select value={value} onChange={event => onChange(event.target.value)} className='w-full rounded-2xl border bg-white/60 px-4 py-3 text-sm'>
+			{zones.map(zone => (
+				<option key={zone} value={zone}>
+					{zone}
+				</option>
+			))}
+		</select>
+	)
+}
+
+function ActionButton({ children, onClick }: { children: ReactNode; onClick: () => void }) {
+	return (
+		<button type='button' onClick={onClick} className='btn-rounded border bg-white/60 px-4 py-2 text-sm font-medium text-secondary transition hover:text-brand'>
+			{children}
+		</button>
+	)
+}
+
+function ErrorText({ children }: { children: ReactNode }) {
+	return <p className='mt-3 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-500'>{children}</p>
 }
