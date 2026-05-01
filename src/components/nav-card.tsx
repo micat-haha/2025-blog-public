@@ -15,8 +15,8 @@ import AboutFilledSVG from '@/svgs/about-filled.svg'
 import AboutOutlineSVG from '@/svgs/about-outline.svg'
 import ShareFilledSVG from '@/svgs/share-filled.svg'
 import ShareOutlineSVG from '@/svgs/share-outline.svg'
-import WebsiteFilledSVG from '@/svgs/website-filled.svg'
-import WebsiteOutlineSVG from '@/svgs/website-outline.svg'
+import GamepadFilledSVG from '@/svgs/gamepad-filled.svg'
+import GamepadOutlineSVG from '@/svgs/gamepad-outline.svg'
 import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
 import { cn } from '@/lib/utils'
@@ -28,7 +28,7 @@ const list = [
 	{
 		icon: ScrollOutlineSVG,
 		iconActive: ScrollFilledSVG,
-		label: '近期文章',
+		label: '全部文章',
 		href: '/blog'
 	},
 	{
@@ -50,9 +50,9 @@ const list = [
 		href: '/share'
 	},
 	{
-		icon: WebsiteOutlineSVG,
-		iconActive: WebsiteFilledSVG,
-		label: '优秀博客',
+		icon: GamepadOutlineSVG,
+		iconActive: GamepadFilledSVG,
+		label: '影音游戏',
 		href: '/bloggers'
 	}
 ]
