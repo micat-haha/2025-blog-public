@@ -13,7 +13,6 @@ import ShortLineSVG from '@/svgs/short-line.svg'
 import { useBlogIndex, type BlogIndexItem } from '@/hooks/use-blog-index'
 import { useCategories } from '@/hooks/use-categories'
 import { useReadArticles } from '@/hooks/use-read-articles'
-import JuejinSVG from '@/svgs/juejin.svg'
 import { useAuthStore } from '@/hooks/use-auth'
 import { useConfigStore } from '@/app/(home)/stores/config-store'
 import { readFileAsText } from '@/lib/file-utils'
@@ -43,6 +42,7 @@ export default function BlogPage() {
 	const [categoryModalOpen, setCategoryModalOpen] = useState(false)
 	const [categoryList, setCategoryList] = useState<string[]>([])
 	const [newCategory, setNewCategory] = useState('')
+	const [searchTerm, setSearchTerm] = useState('')
 
 	const { cancelCoverPreview, onCoverLinkMouseEnter, hoverCoverPreview, mousePosition } = useBlogCoverHover(editMode)
 
@@ -57,9 +57,21 @@ export default function BlogPage() {
 	}, [categoriesFromServer])
 
 	const displayItems = editMode ? editableItems : items
+	const filteredItems = useMemo(() => {
+		const q = searchTerm.trim().toLowerCase()
+
+		return displayItems.filter(item => {
+			return (
+				!q ||
+				(item.title || '').toLowerCase().includes(q) ||
+				(item.summary || '').toLowerCase().includes(q) ||
+				(item.slug || '').toLowerCase().includes(q)
+			)
+		})
+	}, [displayItems, searchTerm])
 
 	const { groupedItems, groupKeys, getGroupLabel } = useMemo(() => {
-		const sorted = [...displayItems].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+		const sorted = [...filteredItems].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 
 		const grouped = sorted.reduce(
 			(acc, item) => {
@@ -125,7 +137,7 @@ export default function BlogPage() {
 			groupKeys: keys,
 			getGroupLabel: (key: string) => grouped[key]?.label || key
 		}
-	}, [displayItems, displayMode, categoryList])
+	}, [filteredItems, displayMode, categoryList])
 
 	const selectedCount = selectedSlugs.size
 	const buttonText = isAuth ? '保存' : '导入密钥'
@@ -329,30 +341,42 @@ export default function BlogPage() {
 
 			<div className='flex flex-col items-center justify-center gap-6 px-6 pt-24 max-sm:pt-24'>
 				{items.length > 0 && (
-					<motion.div
-						initial={{ opacity: 0, scale: 0.6 }}
-						animate={{ opacity: 1, scale: 1 }}
-						className='card btn-rounded relative mx-auto flex items-center gap-1 p-1 max-sm:hidden'>
-						{[
-							{ value: 'day', label: '日' },
-							{ value: 'week', label: '周' },
-							{ value: 'month', label: '月' },
-							{ value: 'year', label: '年' },
-							...(enableCategories ? ([{ value: 'category', label: '分类' }] as const) : [])
-						].map(option => (
-							<motion.button
-								key={option.value}
-								whileHover={{ scale: 1.05 }}
-								whileTap={{ scale: 0.95 }}
-								onClick={() => setDisplayMode(option.value as DisplayMode)}
-								className={cn(
-									'btn-rounded px-3 py-1.5 text-xs font-medium transition-all',
-									displayMode === option.value ? 'bg-brand text-white shadow-sm' : 'text-secondary hover:text-brand hover:bg-white/60'
-								)}>
-								{option.label}
-							</motion.button>
-						))}
-					</motion.div>
+					<>
+						<div className='mb-2 space-y-4'>
+							<input
+								type='text'
+								placeholder='搜索文章...'
+								value={searchTerm}
+								onChange={e => setSearchTerm(e.target.value)}
+								className='focus:ring-brand mx-auto block w-full max-w-md rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:outline-none'
+							/>
+						</div>
+
+						<motion.div
+							initial={{ opacity: 0, scale: 0.6 }}
+							animate={{ opacity: 1, scale: 1 }}
+							className='card btn-rounded relative mx-auto flex items-center gap-1 p-1 max-sm:hidden'>
+							{[
+								{ value: 'day', label: '日' },
+								{ value: 'week', label: '周' },
+								{ value: 'month', label: '月' },
+								{ value: 'year', label: '年' },
+								...(enableCategories ? ([{ value: 'category', label: '分类' }] as const) : [])
+							].map(option => (
+								<motion.button
+									key={option.value}
+									whileHover={{ scale: 1.05 }}
+									whileTap={{ scale: 0.95 }}
+									onClick={() => setDisplayMode(option.value as DisplayMode)}
+									className={cn(
+										'btn-rounded px-3 py-1.5 text-xs font-medium transition-all',
+										displayMode === option.value ? 'bg-brand text-white shadow-sm' : 'text-secondary hover:text-brand hover:bg-white/60'
+									)}>
+									{option.label}
+								</motion.button>
+							))}
+						</motion.div>
+					</>
 				)}
 
 				{groupKeys.map((groupKey, index) => {
@@ -449,21 +473,7 @@ export default function BlogPage() {
 						</motion.div>
 					)
 				})}
-				{items.length > 0 && (
-					<div className='text-center'>
-						<motion.a
-							initial={{ opacity: 0, scale: 0.6 }}
-							animate={{ opacity: 1, scale: 1 }}
-							whileHover={{ scale: 1.05 }}
-							whileTap={{ scale: 0.95 }}
-							href='https://juejin.cn/user/2427311675422382/posts'
-							target='_blank'
-							className='card text-secondary static inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs'>
-							<JuejinSVG className='h-4 w-4' />
-							更多
-						</motion.a>
-					</div>
-				)}
+				{items.length > 0 && filteredItems.length === 0 && <div className='mt-6 text-center text-gray-500'>没有找到相关文章</div>}
 			</div>
 
 			<div className='pt-12'>
