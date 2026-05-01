@@ -5,7 +5,7 @@ import StarRating from '@/components/star-rating'
 import { useSize } from '@/hooks/use-size'
 import { cn } from '@/lib/utils'
 import EditableStarRating from '@/components/editable-star-rating'
-import { Blogger, type BloggerStatus } from '../grid-view'
+import type { Blogger, BloggerStatus } from '../grid-view'
 import { useState } from 'react'
 import AvatarUploadDialog, { type AvatarItem } from './avatar-upload-dialog'
 

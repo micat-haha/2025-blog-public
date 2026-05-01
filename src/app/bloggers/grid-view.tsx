@@ -18,14 +18,15 @@ export interface Blogger {
 
 interface GridViewProps {
 	bloggers: Blogger[]
+	selectedCategory: BloggerStatus
 	isEditMode?: boolean
+	onSelectedCategoryChange: (category: BloggerStatus) => void
 	onUpdate?: (blogger: Blogger, oldBlogger: Blogger, avatarItem?: AvatarItem) => void
 	onDelete?: (blogger: Blogger) => void
 }
 
-export default function GridView({ bloggers, isEditMode = false, onUpdate, onDelete }: GridViewProps) {
+export default function GridView({ bloggers, selectedCategory, isEditMode = false, onSelectedCategoryChange, onUpdate, onDelete }: GridViewProps) {
 	const [searchTerm, setSearchTerm] = useState('')
-	const [selectedCategory, setSelectedCategory] = useState<BloggerStatus>('recent')
 
 	const filteredBloggers = bloggers.filter(blogger => {
 		const status = blogger.status ?? 'recent'
@@ -48,14 +49,14 @@ export default function GridView({ bloggers, isEditMode = false, onUpdate, onDel
 
 				<div className='flex flex-wrap justify-center gap-2'>
 					<button
-						onClick={() => setSelectedCategory('recent')}
+						onClick={() => onSelectedCategoryChange('recent')}
 						className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
 							selectedCategory === 'recent' ? 'bg-brand text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
 						}`}>
 						游戏资源
 					</button>
 					<button
-						onClick={() => setSelectedCategory('disconnected')}
+						onClick={() => onSelectedCategoryChange('disconnected')}
 						className={`rounded-full px-4 py-1.5 text-sm transition-colors ${
 							selectedCategory === 'disconnected' ? 'bg-brand text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
 						}`}>

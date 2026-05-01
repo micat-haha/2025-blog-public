@@ -37,6 +37,9 @@
 		@apply text-brand/60;
 	}
 }
+.prose.about-prose > :first-child {
+	margin-top: 0.25em;
+}
 .prose h4 {
 	font-size: 0.85rem;
 	font-weight: 500;

@@ -5,44 +5,44 @@ import { toast } from 'sonner'
 import { Plus } from 'lucide-react'
 import AvatarUploadDialog, { type AvatarItem } from './avatar-upload-dialog'
 import { DialogModal } from '@/components/dialog-modal'
-
-interface Blogger {
-	name: string
-	avatar: string
-	url: string
-	description: string
-	stars: number
-}
+import type { Blogger, BloggerStatus } from '../grid-view'
 
 interface CreateDialogProps {
 	blogger: Blogger | null
+	initialStatus: BloggerStatus
 	onClose: () => void
 	onSave: (blogger: Blogger) => void
 }
 
-export default function CreateDialog({ blogger, onClose, onSave }: CreateDialogProps) {
+export default function CreateDialog({ blogger, initialStatus, onClose, onSave }: CreateDialogProps) {
 	const [formData, setFormData] = useState<Blogger>({
 		name: '',
 		avatar: '',
 		url: '',
 		description: '',
-		stars: 3
+		stars: 3,
+		status: initialStatus
 	})
 	const [showAvatarDialog, setShowAvatarDialog] = useState(false)
+	const currentStatus = formData.status ?? initialStatus
+	const isGameResource = currentStatus === 'recent'
+	const namePlaceholder = isGameResource ? '游戏名称' : '影音名称'
+	const descriptionPlaceholder = isGameResource ? '游戏介绍...' : '影音介绍...'
 
 	useEffect(() => {
 		if (blogger) {
-			setFormData(blogger)
+			setFormData({ ...blogger, status: blogger.status ?? initialStatus })
 		} else {
 			setFormData({
 				name: '',
 				avatar: '',
 				url: '',
 				description: '',
-				stars: 3
+				stars: 3,
+				status: initialStatus
 			})
 		}
-	}, [blogger])
+	}, [blogger, initialStatus])
 
 	const handleAvatarSubmit = (avatar: AvatarItem) => {
 		const avatarUrl = avatar.type === 'url' ? avatar.url : avatar.previewUrl
@@ -84,7 +84,7 @@ export default function CreateDialog({ blogger, onClose, onSave }: CreateDialogP
 							type='text'
 							value={formData.name}
 							onChange={e => setFormData({ ...formData, name: e.target.value })}
-							placeholder='博主名称'
+							placeholder={namePlaceholder}
 							className='w-full text-lg font-bold focus:outline-none'
 						/>
 						<input
@@ -108,10 +108,24 @@ export default function CreateDialog({ blogger, onClose, onSave }: CreateDialogP
 					))}
 				</div>
 
+				<div className='mt-3 flex gap-2'>
+					{(['recent', 'disconnected'] as BloggerStatus[]).map(status => (
+						<button
+							key={status}
+							type='button'
+							onClick={() => setFormData({ ...formData, status })}
+							className={`rounded-full px-3 py-1 text-xs transition-colors ${
+								currentStatus === status ? 'bg-brand text-white' : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+							}`}>
+							{status === 'recent' ? '游戏资源' : '影音娱乐'}
+						</button>
+					))}
+				</div>
+
 				<textarea
 					value={formData.description}
 					onChange={e => setFormData({ ...formData, description: e.target.value })}
-					placeholder='博主介绍...'
+					placeholder={descriptionPlaceholder}
 					className='mt-3 w-full resize-none text-sm leading-relaxed focus:outline-none'
 					rows={4}
 				/>
