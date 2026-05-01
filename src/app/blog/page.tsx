@@ -342,7 +342,7 @@ export default function BlogPage() {
 			<div className='flex flex-col items-center justify-center gap-6 px-6 pt-24 max-sm:pt-24'>
 				{items.length > 0 && (
 					<>
-						<div className='mb-2 space-y-4'>
+						<div className='mb-2 w-full max-w-md space-y-4'>
 							<input
 								type='text'
 								placeholder='搜索文章...'
