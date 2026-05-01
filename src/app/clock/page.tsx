@@ -7,6 +7,8 @@ import {
 	CalendarDays,
 	Calculator,
 	Check,
+	ChevronLeft,
+	ChevronRight,
 	Clock3,
 	Copy,
 	Globe2,
@@ -45,12 +47,12 @@ const COMMON_TIME_ZONES = [
 ]
 
 const tabs: { value: ToolTab; label: string; icon: LucideIcon }[] = [
+	{ value: 'timer', label: '计时', icon: TimerReset },
 	{ value: 'now', label: '当前时间', icon: Clock3 },
 	{ value: 'timestamp', label: '时间戳', icon: ArrowRightLeft },
 	{ value: 'diff', label: '日期差', icon: Calculator },
 	{ value: 'offset', label: '日期加减', icon: CalendarDays },
-	{ value: 'timezone', label: '时区换算', icon: Globe2 },
-	{ value: 'timer', label: '计时', icon: TimerReset }
+	{ value: 'timezone', label: '时区换算', icon: Globe2 }
 ]
 
 const emptyDuration: DurationFields = {
@@ -62,12 +64,22 @@ const emptyDuration: DurationFields = {
 	seconds: '0'
 }
 
+const timerInputFields: { key: 'hours' | 'minutes' | 'seconds'; label: string }[] = [
+	{ key: 'hours', label: '时' },
+	{ key: 'minutes', label: '分' },
+	{ key: 'seconds', label: '秒' }
+]
+
 function pad(value: number) {
 	return String(value).padStart(2, '0')
 }
 
 function formatDateTimeInput(date: Date) {
 	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`
+}
+
+function formatDateKey(date: Date) {
+	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
 }
 
 function formatLocal(date: Date) {
@@ -227,7 +239,7 @@ function setDurationField(duration: DurationFields, key: keyof DurationFields, v
 }
 
 export default function ClockPage() {
-	const [activeTab, setActiveTab] = useState<ToolTab>('now')
+	const [activeTab, setActiveTab] = useState<ToolTab>('timer')
 	const [now, setNow] = useState<Date | null>(null)
 	const [copiedId, setCopiedId] = useState<string | null>(null)
 	const [timestampInput, setTimestampInput] = useState('')
@@ -360,13 +372,13 @@ export default function ClockPage() {
 
 	return (
 		<div className='relative px-6 pt-28 pb-12 text-sm max-sm:px-4 max-sm:pt-24'>
-			<div className='mx-auto flex w-full max-w-6xl flex-col gap-6'>
+			<div className='mx-auto flex w-full max-w-5xl flex-col gap-6'>
 				<motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className='text-center'>
 					<h1 className='text-3xl font-semibold'>时间工具</h1>
 					<p className='text-secondary mt-3'>时间戳、日期差、时区换算、倒计时集中处理</p>
 				</motion.div>
 
-				<motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className='card relative flex flex-wrap justify-center gap-2 p-2'>
+				<motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className='card relative mx-auto flex w-full max-w-4xl flex-wrap justify-center gap-2 p-2'>
 					{tabs.map(item => {
 						const Icon = item.icon
 						return (
@@ -386,23 +398,25 @@ export default function ClockPage() {
 				</motion.div>
 
 				{activeTab === 'now' && (
-					<ToolCard title='当前时间' icon={Clock3}>
-						<div className='grid gap-3 md:grid-cols-2'>
-							<OutputRow label='本地时间' value={now ? formatLocal(now) : '获取中'} copyId='now-local' copiedId={copiedId} onCopy={copyText} />
-							<OutputRow label='UTC 时间' value={now ? formatUtc(now) : '获取中'} copyId='now-utc' copiedId={copiedId} onCopy={copyText} />
-							<OutputRow label='Unix 秒' value={now ? String(Math.floor(now.getTime() / 1000)) : '获取中'} copyId='now-seconds' copiedId={copiedId} onCopy={copyText} />
-							<OutputRow label='Unix 毫秒' value={now ? String(now.getTime()) : '获取中'} copyId='now-ms' copiedId={copiedId} onCopy={copyText} />
-							<OutputRow label='ISO 8601' value={now ? now.toISOString() : '获取中'} copyId='now-iso' copiedId={copiedId} onCopy={copyText} />
-							<OutputRow label='当前时区' value={localTimeZone} copyId='now-zone' copiedId={copiedId} onCopy={copyText} />
-						</div>
-						<div className='mt-4 flex flex-wrap gap-2'>
-							<ActionButton onClick={setAllToNow}>填入当前时间</ActionButton>
-						</div>
-					</ToolCard>
+					<div className='mx-auto w-full max-w-2xl'>
+						<ToolCard title='当前时间' icon={Clock3} className='p-5'>
+							<div className='grid gap-3 sm:grid-cols-2'>
+								<OutputRow label='本地时间' value={now ? formatLocal(now) : '获取中'} copyId='now-local' copiedId={copiedId} onCopy={copyText} />
+								<OutputRow label='UTC 时间' value={now ? formatUtc(now) : '获取中'} copyId='now-utc' copiedId={copiedId} onCopy={copyText} />
+								<OutputRow label='Unix 秒' value={now ? String(Math.floor(now.getTime() / 1000)) : '获取中'} copyId='now-seconds' copiedId={copiedId} onCopy={copyText} />
+								<OutputRow label='Unix 毫秒' value={now ? String(now.getTime()) : '获取中'} copyId='now-ms' copiedId={copiedId} onCopy={copyText} />
+								<OutputRow label='ISO 8601' value={now ? now.toISOString() : '获取中'} copyId='now-iso' copiedId={copiedId} onCopy={copyText} />
+								<OutputRow label='当前时区' value={localTimeZone} copyId='now-zone' copiedId={copiedId} onCopy={copyText} />
+							</div>
+							<div className='mt-4 flex flex-wrap gap-2'>
+								<ActionButton onClick={setAllToNow}>填入当前时间</ActionButton>
+							</div>
+						</ToolCard>
+					</div>
 				)}
 
 				{activeTab === 'timestamp' && (
-					<div className='grid gap-6 lg:grid-cols-2'>
+					<div className='mx-auto grid w-full max-w-4xl gap-5 lg:grid-cols-2'>
 						<ToolCard title='时间戳转日期' icon={ArrowRightLeft}>
 							<div className='grid gap-4'>
 								<Field label='时间戳'>
@@ -455,7 +469,7 @@ export default function ClockPage() {
 
 						<ToolCard title='日期转时间戳' icon={CalendarDays}>
 							<Field label='本地日期时间'>
-								<input value={dateInput} onChange={event => setDateInput(event.target.value)} type='datetime-local' step='1' className='w-full rounded-2xl border bg-white/60 px-4 py-3 text-sm' />
+								<DateTimePicker value={dateInput} onChange={setDateInput} />
 							</Field>
 							{!parsedDate && <ErrorText>请选择有效日期时间。</ErrorText>}
 							<div className='mt-5 grid gap-3'>
@@ -471,13 +485,14 @@ export default function ClockPage() {
 				)}
 
 				{activeTab === 'diff' && (
+					<div className='mx-auto w-full max-w-3xl'>
 					<ToolCard title='日期差计算' icon={Calculator}>
 						<div className='grid gap-4 md:grid-cols-2'>
 							<Field label='开始时间'>
-								<input value={diffStart} onChange={event => setDiffStart(event.target.value)} type='datetime-local' step='1' className='w-full rounded-2xl border bg-white/60 px-4 py-3 text-sm' />
+								<DateTimePicker value={diffStart} onChange={setDiffStart} />
 							</Field>
 							<Field label='结束时间'>
-								<input value={diffEnd} onChange={event => setDiffEnd(event.target.value)} type='datetime-local' step='1' className='w-full rounded-2xl border bg-white/60 px-4 py-3 text-sm' />
+								<DateTimePicker value={diffEnd} onChange={setDiffEnd} />
 							</Field>
 						</div>
 						{(!diffStartDate || !diffEndDate) && <ErrorText>开始和结束时间都需要有效。</ErrorText>}
@@ -499,13 +514,15 @@ export default function ClockPage() {
 							</ActionButton>
 						</div>
 					</ToolCard>
+					</div>
 				)}
 
 				{activeTab === 'offset' && (
+					<div className='mx-auto w-full max-w-4xl'>
 					<ToolCard title='日期加减' icon={CalendarDays}>
 						<div className='grid gap-4 lg:grid-cols-[1fr_auto]'>
 							<Field label='基准时间'>
-								<input value={offsetBase} onChange={event => setOffsetBase(event.target.value)} type='datetime-local' step='1' className='w-full rounded-2xl border bg-white/60 px-4 py-3 text-sm' />
+								<DateTimePicker value={offsetBase} onChange={setOffsetBase} />
 							</Field>
 							<Field label='运算'>
 								<div className='flex gap-2'>
@@ -543,13 +560,15 @@ export default function ClockPage() {
 							<ActionButton onClick={() => setOffsetDuration(emptyDuration)}>清零</ActionButton>
 						</div>
 					</ToolCard>
+					</div>
 				)}
 
 				{activeTab === 'timezone' && (
+					<div className='mx-auto w-full max-w-4xl'>
 					<ToolCard title='时区换算' icon={Globe2}>
 						<div className='grid gap-4 lg:grid-cols-3'>
 							<Field label='源时间'>
-								<input value={zoneDateTime} onChange={event => setZoneDateTime(event.target.value)} type='datetime-local' step='1' className='w-full rounded-2xl border bg-white/60 px-4 py-3 text-sm' />
+								<DateTimePicker value={zoneDateTime} onChange={setZoneDateTime} />
 							</Field>
 							<Field label='源时区'>
 								<TimeZoneSelect value={sourceZone} zones={timeZones} onChange={setSourceZone} />
@@ -561,7 +580,6 @@ export default function ClockPage() {
 						{zoneTimestamp === null && <ErrorText>请选择有效的源时间。</ErrorText>}
 						<div className='mt-5 grid gap-3 md:grid-cols-2'>
 							<OutputRow label='目标时间' value={zoneTimestamp !== null ? formatInZone(zoneTimestamp, targetZone) : '-'} copyId='zone-target' copiedId={copiedId} onCopy={copyText} />
-							<OutputRow label='源时区时间' value={zoneTimestamp !== null ? formatInZone(zoneTimestamp, sourceZone) : '-'} copyId='zone-source' copiedId={copiedId} onCopy={copyText} />
 							<OutputRow label='UTC 时间' value={zoneTimestamp !== null ? formatUtc(new Date(zoneTimestamp)) : '-'} copyId='zone-utc' copiedId={copiedId} onCopy={copyText} />
 							<OutputRow label='Unix 毫秒' value={zoneTimestamp !== null ? String(zoneTimestamp) : '-'} copyId='zone-ms' copiedId={copiedId} onCopy={copyText} />
 						</div>
@@ -576,9 +594,11 @@ export default function ClockPage() {
 							</ActionButton>
 						</div>
 					</ToolCard>
+					</div>
 				)}
 
 				{activeTab === 'timer' && (
+					<div className='mx-auto w-full max-w-2xl'>
 					<ToolCard title='秒表 / 倒计时' icon={TimerReset}>
 						<div className='flex flex-wrap justify-center gap-2'>
 							<button type='button' onClick={() => setTimerMode('stopwatch')} className={cn('btn-rounded px-4 py-2 font-medium', timerMode === 'stopwatch' ? 'bg-brand text-white' : 'bg-white/60 text-secondary')}>
@@ -593,8 +613,8 @@ export default function ClockPage() {
 						</div>
 						{timerMode === 'countdown' && (
 							<div className='mx-auto grid max-w-xl grid-cols-3 gap-3'>
-								{(['hours', 'minutes', 'seconds'] as (keyof DurationFields)[]).map(key => (
-									<Field key={key} label={{ hours: '时', minutes: '分', seconds: '秒' }[key]}>
+								{timerInputFields.map(({ key, label }) => (
+									<Field key={key} label={label}>
 										<input
 											value={countdownInput[key]}
 											disabled={timerRunning}
@@ -622,15 +642,212 @@ export default function ClockPage() {
 						</div>
 						{timerMode === 'countdown' && countdownInputMs <= 0 && countdownMs <= 0 && <ErrorText>倒计时时长需要大于 0。</ErrorText>}
 					</ToolCard>
+					</div>
 				)}
 			</div>
 		</div>
 	)
 }
 
-function ToolCard({ title, icon: Icon, children }: { title: string; icon: LucideIcon; children: ReactNode }) {
+function DateTimePicker({ value, onChange }: { value: string; onChange: (value: string) => void }) {
+	const wrapperRef = useRef<HTMLDivElement>(null)
+	const parsed = parseDateInput(value)
+	const selected = parsed ?? new Date()
+	const selectedYear = selected.getFullYear()
+	const selectedMonth = selected.getMonth()
+	const [open, setOpen] = useState(false)
+	const [viewMonth, setViewMonth] = useState(() => new Date(selectedYear, selectedMonth, 1))
+
+	useEffect(() => {
+		if (!open) return
+		setViewMonth(new Date(selectedYear, selectedMonth, 1))
+	}, [open, selectedYear, selectedMonth])
+
+	useEffect(() => {
+		if (!open) return
+		const handlePointerDown = (event: PointerEvent) => {
+			if (!wrapperRef.current?.contains(event.target as Node)) {
+				setOpen(false)
+			}
+		}
+		document.addEventListener('pointerdown', handlePointerDown)
+		return () => document.removeEventListener('pointerdown', handlePointerDown)
+	}, [open])
+
+	const commit = (next: Date) => {
+		onChange(formatDateTimeInput(next))
+	}
+
+	const days = useMemo(() => {
+		const start = new Date(viewMonth.getFullYear(), viewMonth.getMonth(), 1)
+		const mondayOffset = (start.getDay() + 6) % 7
+		const gridStart = new Date(start)
+		gridStart.setDate(start.getDate() - mondayOffset)
+		return Array.from({ length: 42 }, (_, index) => {
+			const day = new Date(gridStart)
+			day.setDate(gridStart.getDate() + index)
+			return day
+		})
+	}, [viewMonth])
+
+	const updateDay = (day: Date) => {
+		const next = new Date(selected)
+		next.setFullYear(day.getFullYear(), day.getMonth(), day.getDate())
+		commit(next)
+	}
+
+	const updateTime = (part: 'hours' | 'minutes' | 'seconds', nextValue: number) => {
+		const next = new Date(selected)
+		if (part === 'hours') next.setHours(nextValue)
+		if (part === 'minutes') next.setMinutes(nextValue)
+		if (part === 'seconds') next.setSeconds(nextValue)
+		commit(next)
+	}
+
+	const selectedKey = parsed ? formatDateKey(parsed) : ''
+	const todayKey = formatDateKey(new Date())
+
 	return (
-		<motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className='card relative'>
+		<div ref={wrapperRef} className='relative'>
+			<button
+				type='button'
+				onClick={() => setOpen(current => !current)}
+				className={cn(
+					'btn-rounded flex w-full items-center justify-between gap-3 border bg-white/60 px-4 py-3 text-left text-sm transition hover:bg-white/80',
+					!parsed && 'text-secondary'
+				)}>
+				<span className='font-mono tracking-normal'>{parsed ? formatLocal(parsed) : '请选择日期时间'}</span>
+				<CalendarDays className='text-brand h-4 w-4 shrink-0' />
+			</button>
+
+			{open && (
+				<div className='absolute right-0 z-40 mt-2 w-[min(560px,calc(100vw-2rem))] rounded-[32px] border bg-card p-4 shadow-lg backdrop-blur-sm max-sm:left-1/2 max-sm:right-auto max-sm:-translate-x-1/2'>
+					<div className='grid gap-4 md:grid-cols-[1fr_auto]'>
+						<div>
+							<div className='mb-3 flex items-center justify-between'>
+								<button
+									type='button'
+									onClick={() => setViewMonth(current => new Date(current.getFullYear(), current.getMonth() - 1, 1))}
+									className='btn-rounded flex h-9 w-9 items-center justify-center border bg-white/60 text-secondary hover:text-brand'>
+									<ChevronLeft className='h-4 w-4' />
+								</button>
+								<div className='font-medium'>{viewMonth.getFullYear()}年 {viewMonth.getMonth() + 1}月</div>
+								<button
+									type='button'
+									onClick={() => setViewMonth(current => new Date(current.getFullYear(), current.getMonth() + 1, 1))}
+									className='btn-rounded flex h-9 w-9 items-center justify-center border bg-white/60 text-secondary hover:text-brand'>
+									<ChevronRight className='h-4 w-4' />
+								</button>
+							</div>
+							<div className='grid grid-cols-7 gap-1 text-center text-xs text-secondary'>
+								{['一', '二', '三', '四', '五', '六', '日'].map(item => (
+									<div key={item} className='py-1'>
+										{item}
+									</div>
+								))}
+							</div>
+							<div className='mt-1 grid grid-cols-7 gap-1'>
+								{days.map(day => {
+									const key = formatDateKey(day)
+									const inMonth = day.getMonth() === viewMonth.getMonth()
+									const isSelected = key === selectedKey
+									const isToday = key === todayKey
+									return (
+										<button
+											key={key}
+											type='button'
+											onClick={() => updateDay(day)}
+											className={cn(
+												'btn-rounded h-9 text-sm transition-colors',
+												inMonth ? 'text-primary' : 'text-secondary/40',
+												isSelected ? 'bg-brand text-white shadow-sm' : 'hover:bg-white/80',
+												isToday && !isSelected && 'text-brand font-semibold'
+											)}>
+											{day.getDate()}
+										</button>
+									)
+								})}
+							</div>
+							<div className='mt-3 flex flex-wrap gap-2'>
+								<ActionButton onClick={() => commit(new Date())}>现在</ActionButton>
+								<ActionButton
+									onClick={() => {
+										const next = new Date()
+										next.setHours(selected.getHours(), selected.getMinutes(), selected.getSeconds(), 0)
+										commit(next)
+									}}>
+									今天
+								</ActionButton>
+							</div>
+						</div>
+
+						<div className='rounded-3xl border bg-white/40 p-3'>
+							<div className='mb-2 grid grid-cols-3 gap-2 text-center text-xs text-secondary'>
+								<span>时</span>
+								<span>分</span>
+								<span>秒</span>
+							</div>
+							<div className='grid grid-cols-3 gap-2'>
+								<TimeColumn max={23} value={selected.getHours()} onChange={next => updateTime('hours', next)} />
+								<TimeColumn max={59} value={selected.getMinutes()} onChange={next => updateTime('minutes', next)} />
+								<TimeColumn max={59} value={selected.getSeconds()} onChange={next => updateTime('seconds', next)} />
+							</div>
+						</div>
+					</div>
+					<div className='mt-4 flex justify-end'>
+						<button type='button' onClick={() => setOpen(false)} className='brand-btn justify-center px-5'>
+							完成
+						</button>
+					</div>
+				</div>
+			)}
+		</div>
+	)
+}
+
+function TimeColumn({ max, value, onChange }: { max: number; value: number; onChange: (value: number) => void }) {
+	const ref = useRef<HTMLDivElement>(null)
+	const timerRef = useRef<number | null>(null)
+	const itemHeight = 36
+	const fadeMask = 'linear-gradient(to bottom, transparent, black 24%, black 76%, transparent)'
+
+	useEffect(() => {
+		ref.current?.scrollTo({ top: value * itemHeight, behavior: 'smooth' })
+	}, [value])
+
+	const handleScroll = () => {
+		if (timerRef.current !== null) window.clearTimeout(timerRef.current)
+		timerRef.current = window.setTimeout(() => {
+			const next = Math.max(0, Math.min(max, Math.round((ref.current?.scrollTop ?? 0) / itemHeight)))
+			if (next !== value) onChange(next)
+		}, 100)
+	}
+
+	return (
+		<div className='relative h-40 w-16 overflow-hidden rounded-2xl border bg-white/60'>
+			<div className='pointer-events-none absolute inset-x-2 top-1/2 z-10 h-9 -translate-y-1/2 rounded-xl border border-brand/20 bg-brand/10' />
+			<div
+				ref={ref}
+				onScroll={handleScroll}
+				className='scrollbar-none h-full snap-y snap-mandatory overflow-y-auto py-[62px]'
+				style={{ maskImage: fadeMask, WebkitMaskImage: fadeMask }}>
+				{Array.from({ length: max + 1 }, (_, index) => (
+					<button
+						key={index}
+						type='button'
+						onClick={() => onChange(index)}
+						className={cn('relative z-20 flex h-9 w-full snap-center items-center justify-center font-mono text-sm transition', value === index ? 'text-brand font-semibold' : 'text-secondary')}>
+						{pad(index)}
+					</button>
+				))}
+			</div>
+		</div>
+	)
+}
+
+function ToolCard({ title, icon: Icon, className, children }: { title: string; icon: LucideIcon; className?: string; children: ReactNode }) {
+	return (
+		<motion.section initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className={cn('card relative', className)}>
 			<div className='mb-5 flex items-center gap-3'>
 				<div className='bg-brand/10 text-brand flex h-10 w-10 items-center justify-center rounded-full'>
 					<Icon className='h-5 w-5' />
@@ -644,10 +861,10 @@ function ToolCard({ title, icon: Icon, children }: { title: string; icon: Lucide
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
 	return (
-		<label className='block'>
+		<div className='block'>
 			<span className='text-secondary mb-2 block text-xs font-medium'>{label}</span>
 			{children}
-		</label>
+		</div>
 	)
 }
 
