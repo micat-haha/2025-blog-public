@@ -1,5 +1,5 @@
 {
 	"title": "关于本站",
 	"description": "一个基于 Github 的现代化博客系统",
-	"content": "# 浮光记\n\n这里是一处安静的数字角落，用来收拢那些在学习、研究与生活途中被看见的片刻。\n\n有些内容是笔记，有些是记录，有些只是某个阶段留下的微光。  \n它们未必完整，却真实地指向我曾经走过的路径。\n\n本站基于开源项目修改而来，并在此基础上加入了自己的审美与使用习惯。  \n感谢原作者的开放与分享，让这片空间得以从一个清晰而优雅的起点生长出来。\n\n原项目地址：[YYsuni/2025-blog-public](https://github.com/YYsuni/2025-blog-public)\n\n## 技术栈\n\n- Next.js\n- React\n- TypeScript\n- Tailwind CSS\n- Motion\n- Github API"
+	"content": "# 浮光记\n\n这里是一处安静的数字角落，用来收拢那些在学习、研究与生活途中被看见的片刻。\n有些内容是笔记，有些是记录，有些只是某个阶段留下的微光。  \n它们未必完整，却真实地指向我曾经走过的路径。\n\n本站基于开源项目修改而来，并在此基础上加入了自己的审美与使用习惯。  \n感谢原作者的开放与分享，让这片空间得以从一个清晰而优雅的起点生长出来。\n\n原项目地址：[YYsuni/2025-blog-public](https://github.com/YYsuni/2025-blog-public)\n\n## 技术栈\n\n- Next.js\n- React\n- TypeScript\n- Tailwind CSS\n- Motion\n- Github API"
 }
