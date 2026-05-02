@@ -1,5 +1,18 @@
 [
   {
+    "slug": "gpt-subscription",
+    "title": "apple土区订阅ChatGPT Plus 流程",
+    "tags": [
+      "AI",
+      "经验分享"
+    ],
+    "date": "2026-05-02T18:35",
+    "summary": "分享一种通过土耳其区 Apple ID 与 App Store 余额订阅 ChatGPT Plus 的流程。流程整体适合想了解土区订阅方式的用户参考，操作前需注意账号风控和平台规则风险。",
+    "cover": "/blogs/gpt-subscription/d6746585c31cc6de.png",
+    "hidden": false,
+    "category": "总结"
+  },
+  {
     "slug": "liquid-grass",
     "title": "好玩的液态玻璃",
     "tags": [
