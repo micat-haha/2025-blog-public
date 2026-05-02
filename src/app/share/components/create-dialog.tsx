@@ -10,7 +10,7 @@ import { DialogModal } from '@/components/dialog-modal'
 interface CreateDialogProps {
 	share: Share | null
 	onClose: () => void
-	onSave: (share: Share) => void
+	onSave: (share: Share, logoItem?: LogoItem) => void
 }
 
 export default function CreateDialog({ share, onClose, onSave }: CreateDialogProps) {
@@ -24,6 +24,8 @@ export default function CreateDialog({ share, onClose, onSave }: CreateDialogPro
 	})
 	const [showLogoDialog, setShowLogoDialog] = useState(false)
 	const [tagsInput, setTagsInput] = useState('')
+	const [logoItem, setLogoItem] = useState<LogoItem | null>(null)
+	const logoPreviewSrc = formData.logo.startsWith('blob:') && !logoItem ? '' : formData.logo
 
 	useEffect(() => {
 		if (share) {
@@ -40,9 +42,11 @@ export default function CreateDialog({ share, onClose, onSave }: CreateDialogPro
 			})
 			setTagsInput('')
 		}
+		setLogoItem(null)
 	}, [share])
 
 	const handleLogoSubmit = (logo: LogoItem) => {
+		setLogoItem(logo)
 		const logoUrl = logo.type === 'url' ? logo.url : logo.previewUrl
 		setFormData({ ...formData, logo: logoUrl })
 	}
@@ -57,7 +61,8 @@ export default function CreateDialog({ share, onClose, onSave }: CreateDialogPro
 	}
 
 	const handleSubmit = () => {
-		if (!formData.name.trim() || !formData.logo.trim() || !formData.url.trim() || !formData.description.trim()) {
+		const hasValidLogo = formData.logo.trim() && (!formData.logo.startsWith('blob:') || !!logoItem)
+		if (!formData.name.trim() || !hasValidLogo || !formData.url.trim() || !formData.description.trim()) {
 			toast.error('请填写所有必填项')
 			return
 		}
@@ -67,7 +72,7 @@ export default function CreateDialog({ share, onClose, onSave }: CreateDialogPro
 			return
 		}
 
-		onSave(formData)
+		onSave(formData, logoItem || undefined)
 		onClose()
 		toast.success(share ? '更新成功' : '添加成功')
 	}
@@ -78,9 +83,9 @@ export default function CreateDialog({ share, onClose, onSave }: CreateDialogPro
 			<div>
 				<div className='mb-4 flex items-center gap-4'>
 					<div className='group relative cursor-pointer' onClick={() => setShowLogoDialog(true)}>
-						{formData.logo ? (
+						{logoPreviewSrc ? (
 							<>
-								<img src={formData.logo} alt={formData.name} className='h-16 w-16 rounded-xl object-cover' />
+								<img src={logoPreviewSrc} alt={formData.name} className='h-16 w-16 rounded-xl object-cover' />
 								<div className='pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition-opacity group-hover:opacity-100'>
 									<span className='text-xs text-white'>更换</span>
 								</div>

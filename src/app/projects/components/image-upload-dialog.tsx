@@ -13,8 +13,12 @@ interface ImageUploadDialogProps {
 	onSubmit: (image: ImageItem) => void
 }
 
+function getPersistentImageUrl(value?: string) {
+	return value && !value.startsWith('blob:') ? value : ''
+}
+
 export default function ImageUploadDialog({ currentImage, onClose, onSubmit }: ImageUploadDialogProps) {
-	const [urlInput, setUrlInput] = useState(currentImage || '')
+	const [urlInput, setUrlInput] = useState(getPersistentImageUrl(currentImage))
 	const [previewFile, setPreviewFile] = useState<{ file: File; previewUrl: string } | null>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -52,7 +56,7 @@ export default function ImageUploadDialog({ currentImage, onClose, onSubmit }: I
 		}
 
 		setPreviewFile(null)
-		setUrlInput(currentImage || '')
+		setUrlInput(getPersistentImageUrl(currentImage))
 		onClose()
 	}
 
@@ -61,7 +65,7 @@ export default function ImageUploadDialog({ currentImage, onClose, onSubmit }: I
 			URL.revokeObjectURL(previewFile.previewUrl)
 		}
 		setPreviewFile(null)
-		setUrlInput(currentImage || '')
+		setUrlInput(getPersistentImageUrl(currentImage))
 		onClose()
 	}
 

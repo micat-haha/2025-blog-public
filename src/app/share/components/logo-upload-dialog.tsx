@@ -13,8 +13,12 @@ interface LogoUploadDialogProps {
 	onSubmit: (logo: LogoItem) => void
 }
 
+function getPersistentLogoUrl(value?: string) {
+	return value && !value.startsWith('blob:') ? value : ''
+}
+
 export default function LogoUploadDialog({ currentLogo, onClose, onSubmit }: LogoUploadDialogProps) {
-	const [urlInput, setUrlInput] = useState(currentLogo || '')
+	const [urlInput, setUrlInput] = useState(getPersistentLogoUrl(currentLogo))
 	const [previewFile, setPreviewFile] = useState<{ file: File; previewUrl: string } | null>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -52,7 +56,7 @@ export default function LogoUploadDialog({ currentLogo, onClose, onSubmit }: Log
 		}
 
 		setPreviewFile(null)
-		setUrlInput(currentLogo || '')
+		setUrlInput(getPersistentLogoUrl(currentLogo))
 		onClose()
 	}
 
@@ -61,7 +65,7 @@ export default function LogoUploadDialog({ currentLogo, onClose, onSubmit }: Log
 			URL.revokeObjectURL(previewFile.previewUrl)
 		}
 		setPreviewFile(null)
-		setUrlInput(currentLogo || '')
+		setUrlInput(getPersistentLogoUrl(currentLogo))
 		onClose()
 	}
 	return (

@@ -42,12 +42,19 @@ export default function Page() {
 		setIsCreateDialogOpen(true)
 	}
 
-	const handleSaveShare = (updatedShare: Share) => {
+	const handleSaveShare = (updatedShare: Share, logoItem?: LogoItem) => {
 		if (editingShare) {
 			const updated = shares.map(s => (s.url === editingShare.url ? updatedShare : s))
 			setShares(updated)
 		} else {
 			setShares([...shares, updatedShare])
+		}
+		if (logoItem) {
+			setLogoItems(prev => {
+				const newMap = new Map(prev)
+				newMap.set(updatedShare.url, logoItem)
+				return newMap
+			})
 		}
 	}
 

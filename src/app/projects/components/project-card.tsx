@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { motion } from 'motion/react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
@@ -31,6 +31,13 @@ export function ProjectCard({ project, isEditMode = false, onUpdate, onDelete }:
 	const [localProject, setLocalProject] = useState(project)
 	const [showImageDialog, setShowImageDialog] = useState(false)
 	const [imageItem, setImageItem] = useState<ImageItem | null>(null)
+	const [imageError, setImageError] = useState(false)
+	const imageSrc = localProject.image.startsWith('blob:') && !imageItem ? '' : localProject.image
+	const showImage = Boolean(imageSrc) && !imageError
+
+	useEffect(() => {
+		setImageError(false)
+	}, [localProject.image])
 
 	const handleFieldChange = (field: keyof Project, value: any) => {
 		const updated = { ...localProject, [field]: value }
@@ -92,13 +99,14 @@ export function ProjectCard({ project, isEditMode = false, onUpdate, onDelete }:
 			)}
 
 			<div className='flex items-start gap-4'>
-				<div className='group relative'>
-					<img
-						src={localProject.image}
-						alt={localProject.name}
-						className={cn('h-16 w-16 shrink-0 rounded-xl object-cover', canEdit && 'cursor-pointer')}
-						onClick={() => canEdit && setShowImageDialog(true)}
-					/>
+				<div className={cn('group relative shrink-0', canEdit && 'cursor-pointer')} onClick={() => canEdit && setShowImageDialog(true)}>
+					{showImage ? (
+						<img src={imageSrc} alt={localProject.name} className='h-16 w-16 rounded-xl object-cover' onError={() => setImageError(true)} />
+					) : (
+						<div className='flex h-16 w-16 items-center justify-center rounded-xl bg-gray-200 text-lg font-semibold text-gray-500'>
+							{localProject.name.trim().charAt(0) || '?'}
+						</div>
+					)}
 					{canEdit && (
 						<div className='pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition-opacity group-hover:opacity-100'>
 							<span className='text-xs text-white'>更换</span>

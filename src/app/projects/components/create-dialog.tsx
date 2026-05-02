@@ -10,7 +10,7 @@ import { DialogModal } from '@/components/dialog-modal'
 interface CreateDialogProps {
 	project: Project | null
 	onClose: () => void
-	onSave: (project: Project) => void
+	onSave: (project: Project, imageItem?: ImageItem) => void
 }
 
 export default function CreateDialog({ project, onClose, onSave }: CreateDialogProps) {
@@ -26,6 +26,8 @@ export default function CreateDialog({ project, onClose, onSave }: CreateDialogP
 	})
 	const [showImageDialog, setShowImageDialog] = useState(false)
 	const [tagsInput, setTagsInput] = useState('')
+	const [imageItem, setImageItem] = useState<ImageItem | null>(null)
+	const imagePreviewSrc = formData.image.startsWith('blob:') && !imageItem ? '' : formData.image
 
 	useEffect(() => {
 		if (project) {
@@ -44,9 +46,11 @@ export default function CreateDialog({ project, onClose, onSave }: CreateDialogP
 			})
 			setTagsInput('')
 		}
+		setImageItem(null)
 	}, [project])
 
 	const handleImageSubmit = (image: ImageItem) => {
+		setImageItem(image)
 		const imageUrl = image.type === 'url' ? image.url : image.previewUrl
 		setFormData({ ...formData, image: imageUrl })
 	}
@@ -61,7 +65,8 @@ export default function CreateDialog({ project, onClose, onSave }: CreateDialogP
 	}
 
 	const handleSubmit = () => {
-		if (!formData.name.trim() || !formData.image.trim() || !formData.url.trim() || !formData.description.trim()) {
+		const hasValidImage = formData.image.trim() && (!formData.image.startsWith('blob:') || !!imageItem)
+		if (!formData.name.trim() || !hasValidImage || !formData.url.trim() || !formData.description.trim()) {
 			toast.error('请填写所有必填项')
 			return
 		}
@@ -71,7 +76,7 @@ export default function CreateDialog({ project, onClose, onSave }: CreateDialogP
 			return
 		}
 
-		onSave(formData)
+		onSave(formData, imageItem || undefined)
 		onClose()
 		toast.success(project ? '更新成功' : '添加成功')
 	}
@@ -81,9 +86,9 @@ export default function CreateDialog({ project, onClose, onSave }: CreateDialogP
 			<div>
 				<div className='mb-4 flex items-center gap-4'>
 					<div className='group relative cursor-pointer' onClick={() => setShowImageDialog(true)}>
-						{formData.image ? (
+						{imagePreviewSrc ? (
 							<>
-								<img src={formData.image} alt={formData.name} className='h-16 w-16 rounded-xl object-cover' />
+								<img src={imagePreviewSrc} alt={formData.name} className='h-16 w-16 rounded-xl object-cover' />
 								<div className='pointer-events-none absolute inset-0 flex items-center justify-center rounded-xl bg-black/40 opacity-0 transition-opacity group-hover:opacity-100'>
 									<span className='text-xs text-white'>更换</span>
 								</div>

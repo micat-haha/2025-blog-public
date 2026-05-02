@@ -12,6 +12,10 @@ export type PushSharesParams = {
 	logoItems?: Map<string, LogoItem>
 }
 
+function stripTemporaryShareLogo(share: Share): Share {
+	return share.logo.startsWith('blob:') ? { ...share, logo: '' } : share
+}
+
 export async function pushShares(params: PushSharesParams): Promise<void> {
 	const { shares, logoItems } = params
 
@@ -28,7 +32,7 @@ export async function pushShares(params: PushSharesParams): Promise<void> {
 
 	const treeItems: TreeItem[] = []
 	const uploadedHashes = new Set<string>()
-	let updatedShares = [...shares]
+	let updatedShares = shares.map(stripTemporaryShareLogo)
 
 	// Process logo uploads
 	if (logoItems && logoItems.size > 0) {

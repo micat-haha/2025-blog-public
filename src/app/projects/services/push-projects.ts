@@ -12,6 +12,10 @@ export type PushProjectsParams = {
 	imageItems?: Map<string, ImageItem>
 }
 
+function stripTemporaryProjectImage(project: Project): Project {
+	return project.image.startsWith('blob:') ? { ...project, image: '' } : project
+}
+
 export async function pushProjects(params: PushProjectsParams): Promise<void> {
 	const { projects, imageItems } = params
 
@@ -27,7 +31,7 @@ export async function pushProjects(params: PushProjectsParams): Promise<void> {
 
 	const treeItems: TreeItem[] = []
 	const uploadedHashes = new Set<string>()
-	let updatedProjects = [...projects]
+	let updatedProjects = projects.map(stripTemporaryProjectImage)
 
 	if (imageItems && imageItems.size > 0) {
 		toast.info('正在上传图片...')
