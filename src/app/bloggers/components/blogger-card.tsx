@@ -6,7 +6,7 @@ import { useSize } from '@/hooks/use-size'
 import { cn } from '@/lib/utils'
 import EditableStarRating from '@/components/editable-star-rating'
 import type { Blogger, BloggerStatus } from '../grid-view'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import AvatarUploadDialog, { type AvatarItem } from './avatar-upload-dialog'
 
 interface BloggerCardProps {
@@ -23,6 +23,13 @@ export function BloggerCard({ blogger, isEditMode = false, onUpdate, onDelete }:
 	const [localBlogger, setLocalBlogger] = useState(blogger)
 	const [showAvatarDialog, setShowAvatarDialog] = useState(false)
 	const [avatarItem, setAvatarItem] = useState<AvatarItem | null>(null)
+	const [avatarError, setAvatarError] = useState(false)
+	const avatarSrc = localBlogger.avatar.startsWith('blob:') && !avatarItem ? '' : localBlogger.avatar
+	const showAvatar = Boolean(avatarSrc) && !avatarError
+
+	useEffect(() => {
+		setAvatarError(false)
+	}, [localBlogger.avatar])
 
 	const handleFieldChange = (field: keyof Blogger, value: any) => {
 		const updated = { ...localBlogger, [field]: value }
@@ -77,13 +84,14 @@ export function BloggerCard({ blogger, isEditMode = false, onUpdate, onDelete }:
 
 			<div>
 				<div className='mb-4 flex items-center gap-4'>
-					<div className='group relative'>
-						<img
-							src={localBlogger.avatar}
-							alt={localBlogger.name}
-							className={cn('h-16 w-16 rounded-full object-cover', canEdit && 'cursor-pointer')}
-							onClick={() => canEdit && setShowAvatarDialog(true)}
-						/>
+					<div className={cn('group relative', canEdit && 'cursor-pointer')} onClick={() => canEdit && setShowAvatarDialog(true)}>
+						{showAvatar ? (
+							<img src={avatarSrc} alt={localBlogger.name} className='h-16 w-16 rounded-full object-cover' onError={() => setAvatarError(true)} />
+						) : (
+							<div className='flex h-16 w-16 items-center justify-center rounded-full bg-gray-200 text-lg font-semibold text-gray-500'>
+								{localBlogger.name.trim().charAt(0) || '?'}
+							</div>
+						)}
 						{canEdit && (
 							<div className='ev pointer-events-none absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100'>
 								<span className='text-xs text-white'>更换</span>

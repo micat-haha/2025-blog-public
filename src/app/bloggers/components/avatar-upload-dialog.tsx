@@ -13,8 +13,12 @@ interface AvatarUploadDialogProps {
 	onSubmit: (avatar: AvatarItem) => void
 }
 
+function getPersistentAvatarUrl(value?: string) {
+	return value && !value.startsWith('blob:') ? value : ''
+}
+
 export default function AvatarUploadDialog({ currentAvatar, onClose, onSubmit }: AvatarUploadDialogProps) {
-	const [urlInput, setUrlInput] = useState(currentAvatar || '')
+	const [urlInput, setUrlInput] = useState(getPersistentAvatarUrl(currentAvatar))
 	const [previewFile, setPreviewFile] = useState<{ file: File; previewUrl: string } | null>(null)
 	const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -52,7 +56,7 @@ export default function AvatarUploadDialog({ currentAvatar, onClose, onSubmit }:
 		}
 
 		setPreviewFile(null)
-		setUrlInput(currentAvatar || '')
+		setUrlInput(getPersistentAvatarUrl(currentAvatar))
 		onClose()
 	}
 
@@ -61,13 +65,13 @@ export default function AvatarUploadDialog({ currentAvatar, onClose, onSubmit }:
 			URL.revokeObjectURL(previewFile.previewUrl)
 		}
 		setPreviewFile(null)
-		setUrlInput(currentAvatar || '')
+		setUrlInput(getPersistentAvatarUrl(currentAvatar))
 		onClose()
 	}
 
 	return (
 		<DialogModal open onClose={handleClose} className='card w-md'>
-			<h2 className='mb-4 text-xl font-bold'>选择头像</h2>
+			<h2 className='mb-4 text-xl font-bold'>选择图片</h2>
 
 			<form onSubmit={handleSubmit} className='space-y-4'>
 				<div>

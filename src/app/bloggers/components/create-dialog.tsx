@@ -11,7 +11,7 @@ interface CreateDialogProps {
 	blogger: Blogger | null
 	initialStatus: BloggerStatus
 	onClose: () => void
-	onSave: (blogger: Blogger) => void
+	onSave: (blogger: Blogger, avatarItem?: AvatarItem) => void
 }
 
 export default function CreateDialog({ blogger, initialStatus, onClose, onSave }: CreateDialogProps) {
@@ -24,10 +24,12 @@ export default function CreateDialog({ blogger, initialStatus, onClose, onSave }
 		status: initialStatus
 	})
 	const [showAvatarDialog, setShowAvatarDialog] = useState(false)
+	const [avatarItem, setAvatarItem] = useState<AvatarItem | null>(null)
 	const currentStatus = formData.status ?? initialStatus
 	const isGameResource = currentStatus === 'recent'
 	const namePlaceholder = isGameResource ? '游戏名称' : '影音名称'
 	const descriptionPlaceholder = isGameResource ? '游戏介绍...' : '影音介绍...'
+	const avatarPreviewSrc = formData.avatar.startsWith('blob:') && !avatarItem ? '' : formData.avatar
 
 	useEffect(() => {
 		if (blogger) {
@@ -42,9 +44,11 @@ export default function CreateDialog({ blogger, initialStatus, onClose, onSave }
 				status: initialStatus
 			})
 		}
+		setAvatarItem(null)
 	}, [blogger, initialStatus])
 
 	const handleAvatarSubmit = (avatar: AvatarItem) => {
+		setAvatarItem(avatar)
 		const avatarUrl = avatar.type === 'url' ? avatar.url : avatar.previewUrl
 		setFormData({ ...formData, avatar: avatarUrl })
 	}
@@ -55,7 +59,7 @@ export default function CreateDialog({ blogger, initialStatus, onClose, onSave }
 			return
 		}
 
-		onSave(formData)
+		onSave(formData, avatarItem || undefined)
 		onClose()
 		toast.success(blogger ? '更新成功' : '添加成功')
 	}
@@ -66,9 +70,9 @@ export default function CreateDialog({ blogger, initialStatus, onClose, onSave }
 			<div>
 				<div className='mb-4 flex items-center gap-4'>
 					<div className='group relative cursor-pointer' onClick={() => setShowAvatarDialog(true)}>
-						{formData.avatar ? (
+						{avatarPreviewSrc ? (
 							<>
-								<img src={formData.avatar} alt={formData.name} className='h-16 w-16 rounded-full object-cover' />
+								<img src={avatarPreviewSrc} alt={formData.name} className='h-16 w-16 rounded-full object-cover' />
 								<div className='pointer-events-none absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 transition-opacity group-hover:opacity-100'>
 									<span className='text-xs text-white'>更换</span>
 								</div>

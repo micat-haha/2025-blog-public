@@ -12,6 +12,10 @@ export type PushBloggersParams = {
 	avatarItems?: Map<string, AvatarItem>
 }
 
+function stripTemporaryAvatarUrl(blogger: Blogger): Blogger {
+	return blogger.avatar.startsWith('blob:') ? { ...blogger, avatar: '' } : blogger
+}
+
 export async function pushBloggers(params: PushBloggersParams): Promise<void> {
 	const { bloggers, avatarItems } = params
 
@@ -22,17 +26,17 @@ export async function pushBloggers(params: PushBloggersParams): Promise<void> {
 	const refData = await getRef(token, GITHUB_CONFIG.OWNER, GITHUB_CONFIG.REPO, `heads/${GITHUB_CONFIG.BRANCH}`)
 	const latestCommitSha = refData.sha
 
-	const commitMessage = `更新博主列表`
+	const commitMessage = `更新影音游戏列表`
 
 	toast.info('正在准备文件...')
 
 	const treeItems: TreeItem[] = []
 	const uploadedHashes = new Set<string>()
-	let updatedBloggers = [...bloggers]
+	let updatedBloggers = bloggers.map(stripTemporaryAvatarUrl)
 
 	// Process avatar uploads
 	if (avatarItems && avatarItems.size > 0) {
-		toast.info('正在上传头像...')
+		toast.info('正在上传图片...')
 		for (const [url, avatarItem] of avatarItems.entries()) {
 			if (avatarItem.type === 'file') {
 				const hash = avatarItem.hash || (await hashFileSHA256(avatarItem.file))
