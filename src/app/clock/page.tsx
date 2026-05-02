@@ -518,82 +518,97 @@ export default function ClockPage() {
 				)}
 
 				{activeTab === 'offset' && (
-					<div className='mx-auto w-full max-w-4xl'>
-					<ToolCard title='日期加减' icon={CalendarDays}>
-						<div className='grid gap-4 lg:grid-cols-[1fr_auto]'>
-							<Field label='基准时间'>
-								<DateTimePicker value={offsetBase} onChange={setOffsetBase} />
-							</Field>
-							<Field label='运算'>
-								<div className='flex gap-2'>
-									<button type='button' onClick={() => setOffsetMode('add')} className={cn('btn-rounded px-4 py-3 font-medium', offsetMode === 'add' ? 'bg-brand text-white' : 'bg-white/60 text-secondary')}>
-										加
-									</button>
-									<button
-										type='button'
-										onClick={() => setOffsetMode('subtract')}
-										className={cn('btn-rounded px-4 py-3 font-medium', offsetMode === 'subtract' ? 'bg-brand text-white' : 'bg-white/60 text-secondary')}>
-										减
-									</button>
-								</div>
-							</Field>
-						</div>
-						<div className='mt-4 grid grid-cols-2 gap-3 md:grid-cols-6'>
-							{(['years', 'months', 'days', 'hours', 'minutes', 'seconds'] as (keyof DurationFields)[]).map(key => (
-								<Field key={key} label={{ years: '年', months: '月', days: '日', hours: '时', minutes: '分', seconds: '秒' }[key]}>
-									<input
-										value={offsetDuration[key]}
-										onChange={event => setOffsetDuration(current => setDurationField(current, key, event.target.value))}
-										inputMode='numeric'
-										className='no-spinner w-full rounded-2xl border bg-white/60 px-3 py-3 text-center font-mono text-sm'
-									/>
+					<div className='mx-auto w-full max-w-2xl'>
+						<ToolCard title='日期加减' icon={CalendarDays}>
+							<div className='grid gap-4 sm:grid-cols-[1fr_auto] sm:items-end'>
+								<Field label='基准时间'>
+									<DateTimePicker value={offsetBase} onChange={setOffsetBase} />
 								</Field>
-							))}
-						</div>
-						{!offsetBaseDate && <ErrorText>请选择有效的基准时间。</ErrorText>}
-						<div className='mt-5 grid gap-3 md:grid-cols-2'>
-							<OutputRow label='计算结果' value={offsetResult ? formatLocal(offsetResult) : '-'} copyId='offset-local' copiedId={copiedId} onCopy={copyText} />
-							<OutputRow label='结果时间戳' value={offsetResult ? String(offsetResult.getTime()) : '-'} copyId='offset-ms' copiedId={copiedId} onCopy={copyText} />
-						</div>
-						<div className='mt-4 flex flex-wrap gap-2'>
-							<ActionButton onClick={() => setOffsetBase(formatDateTimeInput(new Date()))}>基准设为现在</ActionButton>
-							<ActionButton onClick={() => setOffsetDuration(emptyDuration)}>清零</ActionButton>
-						</div>
-					</ToolCard>
+								<Field label='运算'>
+									<div className='grid grid-cols-2 gap-1 rounded-2xl border bg-white/40 p-1'>
+										<button
+											type='button'
+											onClick={() => setOffsetMode('add')}
+											className={cn('btn-rounded h-11 min-w-14 px-4 font-medium', offsetMode === 'add' ? 'bg-brand text-white' : 'text-secondary hover:bg-white/70')}>
+											加
+										</button>
+										<button
+											type='button'
+											onClick={() => setOffsetMode('subtract')}
+											className={cn('btn-rounded h-11 min-w-14 px-4 font-medium', offsetMode === 'subtract' ? 'bg-brand text-white' : 'text-secondary hover:bg-white/70')}>
+											减
+										</button>
+									</div>
+								</Field>
+							</div>
+
+							<div className='mt-5 rounded-[28px] border bg-white/30 p-4'>
+								<div className='grid grid-cols-3 gap-3'>
+									{(['years', 'months', 'days', 'hours', 'minutes', 'seconds'] as (keyof DurationFields)[]).map(key => (
+										<Field key={key} label={{ years: '年', months: '月', days: '日', hours: '时', minutes: '分', seconds: '秒' }[key]}>
+											<input
+												value={offsetDuration[key]}
+												onChange={event => setOffsetDuration(current => setDurationField(current, key, event.target.value))}
+												inputMode='numeric'
+												className='no-spinner w-full rounded-2xl border bg-white/70 px-3 py-3 text-center font-mono text-sm'
+											/>
+										</Field>
+									))}
+								</div>
+							</div>
+
+							{!offsetBaseDate && <ErrorText>请选择有效的基准时间。</ErrorText>}
+							<div className='mt-5 grid gap-3 sm:grid-cols-2'>
+								<OutputRow label='计算结果' value={offsetResult ? formatLocal(offsetResult) : '-'} copyId='offset-local' copiedId={copiedId} onCopy={copyText} />
+								<OutputRow label='结果时间戳' value={offsetResult ? String(offsetResult.getTime()) : '-'} copyId='offset-ms' copiedId={copiedId} onCopy={copyText} />
+							</div>
+							<div className='mt-4 flex flex-wrap justify-end gap-2'>
+								<ActionButton onClick={() => setOffsetBase(formatDateTimeInput(new Date()))}>基准设为现在</ActionButton>
+								<ActionButton onClick={() => setOffsetDuration(emptyDuration)}>清零</ActionButton>
+							</div>
+						</ToolCard>
 					</div>
 				)}
 
 				{activeTab === 'timezone' && (
-					<div className='mx-auto w-full max-w-4xl'>
-					<ToolCard title='时区换算' icon={Globe2}>
-						<div className='grid gap-4 lg:grid-cols-3'>
-							<Field label='源时间'>
-								<DateTimePicker value={zoneDateTime} onChange={setZoneDateTime} />
-							</Field>
-							<Field label='源时区'>
-								<TimeZoneSelect value={sourceZone} zones={timeZones} onChange={setSourceZone} />
-							</Field>
-							<Field label='目标时区'>
-								<TimeZoneSelect value={targetZone} zones={timeZones} onChange={setTargetZone} />
-							</Field>
-						</div>
-						{zoneTimestamp === null && <ErrorText>请选择有效的源时间。</ErrorText>}
-						<div className='mt-5 grid gap-3 md:grid-cols-2'>
-							<OutputRow label='目标时间' value={zoneTimestamp !== null ? formatInZone(zoneTimestamp, targetZone) : '-'} copyId='zone-target' copiedId={copiedId} onCopy={copyText} />
-							<OutputRow label='UTC 时间' value={zoneTimestamp !== null ? formatUtc(new Date(zoneTimestamp)) : '-'} copyId='zone-utc' copiedId={copiedId} onCopy={copyText} />
-							<OutputRow label='Unix 毫秒' value={zoneTimestamp !== null ? String(zoneTimestamp) : '-'} copyId='zone-ms' copiedId={copiedId} onCopy={copyText} />
-						</div>
-						<div className='mt-4 flex flex-wrap gap-2'>
-							<ActionButton onClick={() => setZoneDateTime(formatDateTimeInput(new Date()))}>源时间设为现在</ActionButton>
-							<ActionButton
-								onClick={() => {
-									setSourceZone(targetZone)
-									setTargetZone(sourceZone)
-								}}>
-								交换时区
-							</ActionButton>
-						</div>
-					</ToolCard>
+					<div className='mx-auto w-full max-w-2xl'>
+						<ToolCard title='时区换算' icon={Globe2}>
+							<div className='grid gap-4'>
+								<Field label='源时间'>
+									<DateTimePicker value={zoneDateTime} onChange={setZoneDateTime} />
+								</Field>
+								<div className='grid gap-3 sm:grid-cols-[1fr_auto_1fr] sm:items-end'>
+									<Field label='源时区'>
+										<TimeZoneSelect value={sourceZone} zones={timeZones} onChange={setSourceZone} />
+									</Field>
+									<button
+										type='button'
+										onClick={() => {
+											setSourceZone(targetZone)
+											setTargetZone(sourceZone)
+										}}
+										className='btn-rounded flex h-11 items-center justify-center gap-2 border bg-white/60 px-4 text-sm font-medium text-secondary transition hover:text-brand sm:mb-0'>
+										<ArrowRightLeft className='h-4 w-4' />
+										交换
+									</button>
+									<Field label='目标时区'>
+										<TimeZoneSelect value={targetZone} zones={timeZones} onChange={setTargetZone} />
+									</Field>
+								</div>
+							</div>
+
+							{zoneTimestamp === null && <ErrorText>请选择有效的源时间。</ErrorText>}
+							<div className='mt-5 grid gap-3'>
+								<OutputRow label='目标时间' value={zoneTimestamp !== null ? formatInZone(zoneTimestamp, targetZone) : '-'} copyId='zone-target' copiedId={copiedId} onCopy={copyText} />
+								<div className='grid gap-3 sm:grid-cols-2'>
+									<OutputRow label='UTC 时间' value={zoneTimestamp !== null ? formatUtc(new Date(zoneTimestamp)) : '-'} copyId='zone-utc' copiedId={copiedId} onCopy={copyText} />
+									<OutputRow label='Unix 毫秒' value={zoneTimestamp !== null ? String(zoneTimestamp) : '-'} copyId='zone-ms' copiedId={copiedId} onCopy={copyText} />
+								</div>
+							</div>
+							<div className='mt-4 flex justify-end'>
+								<ActionButton onClick={() => setZoneDateTime(formatDateTimeInput(new Date()))}>源时间设为现在</ActionButton>
+							</div>
+						</ToolCard>
 					</div>
 				)}
 
