@@ -1,5 +1,18 @@
 [
   {
+    "slug": "python-class1",
+    "title": "Python 面向对象基础：类、对象、方法、魔术方法与封装",
+    "tags": [
+      "python",
+      "学习日记"
+    ],
+    "date": "2026-05-06T22:27",
+    "summary": "文章主要包括Python类，对象，方法，魔术方法，封装有关的知识点。",
+    "cover": "/blogs/python-class1/618526722456e6d4.png",
+    "hidden": false,
+    "category": "学习笔记"
+  },
+  {
     "slug": "gpt-subscription",
     "title": "apple土区订阅ChatGPT Plus 流程",
     "tags": [
