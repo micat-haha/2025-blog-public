@@ -9,5 +9,18 @@
 			"计时",
 			"时间转换"
 		]
+	},
+	{
+		"name": "文件中转站",
+		"year": 2026,
+		"image": "/images/project/f16873b0bb299f02.png",
+		"url": "http://www.micat888.ccwu.cc",
+		"description": "通过vibe coding做的一个小工具，用户上传文件，系统生成下载链接和取件码，另一台设备可以下载。文件只保存几天，到期后自动删除。",
+		"tags": [
+			"云盘",
+			"中转站",
+			"文件传输"
+		],
+		"github": "https://github.com/micat-haha/temp-file-transfer"
 	}
 ]
