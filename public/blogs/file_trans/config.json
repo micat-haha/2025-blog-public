@@ -1,0 +1,12 @@
+{
+  "title": "临时文件中转站",
+  "tags": [
+    "文件中转站",
+    "vibe coding"
+  ],
+  "date": "2026-05-08T19:38",
+  "summary": "用户上传文件，系统生成下载链接和取件码，另一台设备可以下载。文件只保存几天，到期后自动删除。",
+  "cover": "/blogs/file_trans/f16873b0bb299f02.png",
+  "hidden": false,
+  "category": "代码实现"
+}
